@@ -9,13 +9,25 @@ if (loginForm) {
     const errorMessage = document.querySelector(".error-message");
 
     if (email === "client@test.com" && password === "Client@123") {
-      console.log("Client login successful");
+      sessionStorage.setItem("myData", email);
       window.location.href = "pages/index-client.html";
+    } else if (email === "engineer@test.com" && password === "engineer@123") {
+      sessionStorage.setItem("myData", email);
+      window.location.href = "pages/index-engineer.html";
     } else {
       errorMessage.textContent = "Invalid email or password. Please try again.";
     }
   });
 }
+
+const logout = document
+  .getElementById("logoutButton")
+  .addEventListener("click", function (event) {
+    event.preventDefault();
+
+    sessionStorage.clear();
+    window.location.href = "../index.html";
+});
 
 const table = document.querySelector("table");
 const form = document.getElementById("filterForm");
@@ -32,6 +44,7 @@ function renderTable(requests) {
             <td>${request.priority}</td>
             <td>${request.status}</td>
             <td>${request.created_at}</td>
+            <td><a href="request-details.html?id=${request.id}">View Details</a></td>
         `;
 
     table.appendChild(row);
