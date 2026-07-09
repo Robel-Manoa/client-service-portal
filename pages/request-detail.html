@@ -3,22 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./styles/styles.css">
+    <link rel="stylesheet" href="../styles/styles.css">
     <title>Client Service Portal</title>
 </head>
 <body>
     <nav>
       <ul>
-        <li><a href="./index-engineer.html">Home</a></li>
-        <li><a href="./request-detail.html">Requests details</a></li>
+        <li><a href="./index-client.html" id="homeLink">Home</a></li>
         <li><button type="button" id="logoutButton">Log out</button></li>
       </ul>
     </nav>
 
-    <h2>Request List</h2>
-    
+    <div class="body-content">
+      <h2>Request Details</h2>
+      <div id="request-info">
+        <p><strong>Title:</strong> <span id="request-title"></span></p>
+        <p><strong>Description:</strong> <span id="request-description"></span></p>
+        <p><strong>Priority:</strong> <span id="request-priority"></span></p>
+        <p><strong>Status:</strong> <span id="request-status"></span></p>
+        <p><strong>Created:</strong> <span id="request-created"></span></p>
+      </div>
+
+      <h3>Status history</h3>
+      <ul id="status-history"></ul>
+
+      <div id="status-controls"></div>
+    </div>
 
     <script src="../data/data.js"></script>
+    <script src="../script/storage.js"></script>
     <script src="../script/app.js"></script>
 </body>
 </html>

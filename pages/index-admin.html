@@ -4,17 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="../styles/styles.css" />
-    <title>Client service portal</title>
+    <title>Client Service Portal</title>
   </head>
-  <body data-role="client">
+  <body data-role="admin">
     <nav>
       <ul>
-        <li><a href="./index-client.html">Home</a></li>
-        <li><a href="./add-request.html">New Request</a></li>
-        <li><a href="./request-detail.html">Requests details</a></li>
+        <li><a href="./index-admin.html">Home</a></li>
         <li><button type="button" id="logoutButton">Log out</button></li>
       </ul>
     </nav>
+
     <div class="body-content">
       <h2>Request List</h2>
       <form action="" method="get" id="filterForm">
@@ -27,6 +26,7 @@
         </select>
         <button type="submit">Go</button>
       </form>
+
       <table border="1">
         <tr>
           <th>Title</th>
@@ -36,7 +36,6 @@
           <th>Details</th>
         </tr>
       </table>
-      <a href="./add-request.html">New Request</a>
     </div>
 
     <script src="../data/data.js"></script>
