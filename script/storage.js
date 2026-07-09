@@ -53,7 +53,9 @@ const CSP = () => {
   }
 
   function login(email, password) {
-    const user = getUser().find((u) => u.email === email && u.password === password);
+    const user = getUser().find(
+      (u) => u.email === email && u.password === password,
+    );
     if (!user) return null;
     write(keys.currentUser, user);
     return user;
@@ -133,6 +135,50 @@ const CSP = () => {
     return request;
   }
 
+  function getAssignments() {
+    return read(keys.assignements) || [];
+  }
+
+  function getAssignedRequestsForEngineer(engineerId) {
+    const assignment = getAssignments().find(
+      (a) => a.engineer_id === engineerId,
+    );
+    if (!assignment) return [];
+    return assignment.request_ids
+      .map((requestId) => getRequestById(requestId))
+      .filter(Boolean);
+  }
+
+  function getComments() {
+    return read(keys.comments) || [];
+  }
+
+  function saveComments(comments) {
+    write(keys.comments, comments);
+  }
+
+  function getCommentsForRequest(requestId, { includeInternal }) {
+    return getComments()
+      .filter((c) => c.request_id === requestId)
+      .filter((c) => includeInternal || !c.is_internal)
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  }
+
+  function addComment({ request_id, user_id, content, is_internal }) {
+    const comments = getComments();
+    const newComment = {
+      id: uid("comment"),
+      request_id,
+      user_id,
+      content,
+      is_internal,
+      created_at: new Date().toISOString(),
+    };
+    comments.push(newComment);
+    saveComments(comments);
+    return newComment;
+  }
+
   return {
     init,
     getUser,
@@ -142,7 +188,7 @@ const CSP = () => {
     login,
     logout,
     getRequests,
-    getAssignements,
+    getAssignments,
     saveRequest,
     getRequestById,
     getRequestsForClient,
@@ -150,6 +196,11 @@ const CSP = () => {
     addRequest,
     canTransition,
     updateRequestStatus,
+    getAssignedRequestsForEngineer,
+    getComments,
+    saveComments,
+    getCommentsForRequest,
+    addComment,
   };
 };
 

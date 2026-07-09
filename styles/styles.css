@@ -272,6 +272,61 @@ nav ul li button:hover {
   padding: 25px;
 }
 
+.body-content #comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 25px;
+}
+
+.body-content #comments-list li {
+  border-bottom: 1px solid var(--color-primary);
+  padding-bottom: 10px;
+  color: var(--color-primary);
+  overflow-wrap: break-word;
+}
+
+.body-content #add-comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 5%;
+  max-width: 500px;
+}
+
+.body-content #add-comment-form textarea {
+  height: 80px;
+  background-color: transparent;
+  border: 1px solid var(--color-primary);
+  outline: none;
+  padding: 10px;
+  color: var(--color-primary);
+}
+
+.body-content #add-comment-form label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-primary);
+  font-weight: 300;
+}
+
+.body-content #add-comment-form button {
+  width: 150px;
+  height: 40px;
+  background-color: var(--color-primary);
+  color: var(--background-color);
+  font-weight: 300;
+  transition: ease-out 0.3s;
+}
+
+.body-content #add-comment-form button:hover {
+  cursor: pointer;
+  border-color: var(--color-primary);
+  background-color: var(--background-color);
+  color: var(--color-primary);
+}
+
 @media screen and (max-width: 480px) {
   nav ul {
     flex-direction: column;
@@ -303,7 +358,8 @@ nav ul li button:hover {
   }
 
   .body-content #filterForm button,
-  .body-content #add-request-form button {
+  .body-content #add-request-form button,
+  .body-content #add-comment-form button {
     width: 100%;
   }
 }

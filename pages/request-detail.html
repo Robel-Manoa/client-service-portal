@@ -28,6 +28,24 @@
       <ul id="status-history"></ul>
 
       <div id="status-controls"></div>
+
+      <h3>Comments</h3>
+      <ul id="comments-list"></ul>
+
+      <form action="" method="post" id="add-comment-form">
+        <label for="comment-content">Add a comment</label>
+        <textarea
+          name="content"
+          id="comment-content"
+          placeholder="Write a comment"
+          required
+        ></textarea>
+        <label id="internal-comment-label" for="comment-internal">
+          <input type="checkbox" name="is_internal" id="comment-internal" />
+          Internal comment (not visible to client)
+        </label>
+        <button type="submit">Post comment</button>
+      </form>
     </div>
 
     <script src="../data/data.js"></script>
