@@ -1,0 +1,266 @@
+* {
+  margin: 0;
+  padding: 0;
+  scroll-behavior: smooth;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  list-style-type: none;
+  text-decoration: none;
+}
+
+:root {
+  --color-primary: #3d5675;
+  --background-color: #d5cbbf;
+}
+
+#loginForm {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: left;
+  justify-content: center;
+  gap: 20px;
+  margin: 15% 50% 10% 10%;
+  border: none;
+  box-shadow: 1px 1px 5px 1px var(--color-primary);
+  padding: 5%;
+  background-color: var(--background-color);
+}
+
+#loginForm input {
+  height: 40px;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  border-bottom: 1px solid var(--color-primary);
+  color: var(--color-primary);
+}
+
+#loginForm button {
+  width: 100px;
+  height: 40px;
+  background-color: var(--color-primary);
+  color: var(--background-color);
+  font-weight: 300;
+  transition: ease-out 0.3s;
+}
+
+#loginForm button:hover {
+  cursor: pointer;
+  border-color: var(--color-primary);
+  background-color: var(--background-color);
+  color: var(--color-primary);
+}
+
+#loginForm .error-message {
+  color: red;
+  font-size: 12px;
+  font-weight: 300;
+}
+
+.right-content {
+  position: absolute;
+  top: 0%;
+  right: 0%;
+  bottom: 0%;
+  width: 320px;
+  padding: 10% 15% 10% 10%;
+  background-color: var(--background-color);
+  border-radius: 50px 0px 0px 50px;
+  box-shadow: 1px 1px 5px 1px var(--color-primary);
+}
+
+.right-content h1 {
+  text-transform: uppercase;
+  line-height: 3rem;
+}
+
+.right-content h1 span:nth-of-type(1) {
+  color: var(--color-primary);
+  font-size: 84pt;
+}
+
+.right-content h1 span:nth-of-type(2) {
+  display: block;
+  font-size: 42pt;
+}
+
+.right-content h1 span:nth-of-type(3) {
+  color: var(--color-primary);
+}
+
+nav {
+  position: relative;
+  left: 0%;
+  right: 0%;
+  background-color: var(--background-color);
+  padding: 10px;
+}
+
+nav ul li {
+  display: inline-block;
+  margin-right: 20px;
+  margin-left: 20px;
+}
+
+nav ul li button {
+  background-color: var(--color-primary);
+  color: var(--background-color);
+  font-weight: 300;
+  transition: ease-out 0.3s;
+  padding: 5px;
+  border: none;
+}
+
+nav ul li button:hover {
+  cursor: pointer;
+  border-color: var(--color-primary);
+  background-color: var(--background-color);
+  color: var(--color-primary);
+}
+
+.body-content {
+  position: relative;
+  padding: 5%;
+}
+
+.body-content h2 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.body-content table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.body-content #add-request-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 5%;
+}
+
+.body-content #add-request-form input,
+.body-content #add-request-form textarea,
+.body-content #add-request-form select {
+  height: 40px;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  border-bottom: 1px solid var(--color-primary);
+  color: var(--color-primary);
+}
+
+.body-content #add-request-form button {
+  width: 100px;
+  height: 40px;
+  background-color: var(--color-primary);
+  color: var(--background-color);
+  font-weight: 300;
+  transition: ease-out 0.3s;
+}
+
+.body-content #add-request-form button:hover {
+  cursor: pointer;
+  border-color: var(--color-primary);
+  background-color: var(--background-color);
+  color: var(--color-primary);
+}
+
+#status-controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+#status-controls button {
+  height: 40px;
+  padding: 0 15px;
+  border: none;
+  background-color: var(--color-primary);
+  color: var(--background-color);
+  font-weight: 300;
+  transition: ease-out 0.3s;
+}
+
+#status-controls button:hover {
+  cursor: pointer;
+  background-color: var(--background-color);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+
+@media screen and (max-width: 375px) {
+  #loginForm {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    justify-content: center;
+    gap: 20px;
+    margin: 80% 10% 10% 10%;
+    border: none;
+    box-shadow: 1px 1px 5px 1px var(--color-primary);
+    padding: 5%;
+    background-color: var(--background-color);
+  }
+
+  .right-content {
+    position: absolute;
+    top: 0%;
+    right: 0%;
+    left: 0%;
+    width: auto;
+    padding: 15% 5% 5% 5%;
+    background-color: var(--background-color);
+    border-radius: 0px;
+    box-shadow: 1px 1px 5px 1px var(--color-primary);
+  }
+
+  .right-content h1 span:nth-of-type(1) {
+    color: var(--color-primary);
+    font-size: 3rem;
+  }
+
+  .right-content h1 span:nth-of-type(2) {
+    font-size: 3rem;
+  }
+}
+
+@media screen and (max-width: 1280px) {
+  #loginForm {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    justify-content: center;
+    gap: 20px;
+    margin: 15% 10% 10% 45%;
+    border: none;
+    box-shadow: 1px 1px 5px 1px var(--color-primary);
+    padding: 5%;
+    width: 40%;
+    background-color: var(--background-color);
+  }
+
+  .right-content {
+    position: absolute;
+    top: 0%;
+    bottom: 0%;
+    left: 0%;
+    width: 30%;
+    padding: 5% 5% 5% 5%;
+    background-color: var(--background-color);
+    border-radius: 0px;
+    box-shadow: 1px 1px 5px 1px var(--color-primary);
+  }
+
+  .right-content h1 span:nth-of-type(1) {
+    color: var(--color-primary);
+    font-size: 3rem;
+  }
+
+  .right-content h1 span:nth-of-type(2) {
+    font-size: 3rem;
+  }
+}

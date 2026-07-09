@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../styles/styles.css" />
+    <title>Client service portal</title>
+  </head>
+  <body data-role="client">
+    <nav>
+      <ul>
+        <li><a href="./index-client.html">Home</a></li>
+        <li><a href="./add-request.html">New Request</a></li>
+        <li><a href="./request-detail.html">Requests details</a></li>
+        <li><button type="button" id="logoutButton">Log out</button></li>
+      </ul>
+    </nav>
+
+    <div class="body-content">
+      <h2>Add new request</h2>
+      <form action="" method="post" id="add-request-form">
+        <label for="title">Title</label>
+        <input type="text" name="title" id="title" required placeholder="Enter request title" />
+        <select name="priority" required>
+          <option value="">Select priority</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+        <label for="description">Description</label>
+        <textarea
+          name="description"
+          id="description"
+          placeholder="Enter request description"
+        ></textarea>
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+
+    <script src="../data/data.js"></script>
+    <script src="../script/storage.js"></script>
+    <script src="../script/app.js"></script>
+  </body>
+</html>
