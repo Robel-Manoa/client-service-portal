@@ -22,6 +22,18 @@
         <p><strong>Priority:</strong> <span id="request-priority"></span></p>
         <p><strong>Status:</strong> <span id="request-status"></span></p>
         <p><strong>Created:</strong> <span id="request-created"></span></p>
+        <p><strong>Assigned Engineer:</strong> <span id="request-assigned-engineer"></span></p>
+      </div>
+
+      <div id="assignment-section">
+        <h3>Assign Engineer</h3>
+        <form action="" method="post" id="assign-engineer-form">
+          <label for="assign-engineer-select">Engineer</label>
+          <select id="assign-engineer-select" name="engineer_id" required>
+            <option value="">Select engineer</option>
+          </select>
+          <button type="submit">Assign</button>
+        </form>
       </div>
 
       <h3>Status history</h3>

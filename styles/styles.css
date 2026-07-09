@@ -265,6 +265,40 @@ nav ul li button:hover {
   padding: 5%;
 }
 
+.body-content #assign-engineer-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 5%;
+}
+
+.body-content #assign-engineer-form select {
+  height: 40px;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  border-bottom: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  max-width: 100%;
+}
+
+.body-content #assign-engineer-form button {
+  width: 100px;
+  height: 40px;
+  background-color: var(--color-primary);
+  color: var(--background-color);
+  font-weight: 300;
+  transition: ease-out 0.3s;
+}
+
+.body-content #assign-engineer-form button:hover {
+  cursor: pointer;
+  border-color: var(--color-primary);
+  background-color: var(--background-color);
+  color: var(--color-primary);
+}
+
 .body-content #status-history {
   display: flex;
   flex-direction: column;
@@ -345,7 +379,8 @@ nav ul li button:hover {
   }
 
   .body-content #filterForm,
-  .body-content #add-request-form {
+  .body-content #add-request-form,
+  .body-content #assign-engineer-form {
     flex-direction: column;
     align-items: stretch;
   }
@@ -353,13 +388,15 @@ nav ul li button:hover {
   .body-content #filterForm #filterInput,
   .body-content #add-request-form input,
   .body-content #add-request-form textarea,
-  .body-content #add-request-form select {
+  .body-content #add-request-form select,
+  .body-content #assign-engineer-form select {
     width: 100%;
   }
 
   .body-content #filterForm button,
   .body-content #add-request-form button,
-  .body-content #add-comment-form button {
+  .body-content #add-comment-form button,
+  .body-content #assign-engineer-form button {
     width: 100%;
   }
 }

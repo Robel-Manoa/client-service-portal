@@ -139,6 +139,39 @@ const CSP = () => {
     return read(keys.assignements) || [];
   }
 
+  function saveAssignments(assignments) {
+    write(keys.assignements, assignments);
+  }
+
+  function getEngineers() {
+    return getUser().filter((u) => u.role === "engineer");
+  }
+
+  function getAssignmentForRequest(requestId) {
+    return getAssignments().find((a) => a.request_id === requestId);
+  }
+
+  function assignRequest({ request_id, engineer_id }) {
+    const assignments = getAssignments();
+    const existing = assignments.find((a) => a.request_id === request_id);
+    const now = new Date().toISOString();
+
+    if (existing) {
+      existing.engineer_id = engineer_id;
+      existing.assigned_at = now;
+    } else {
+      assignments.push({
+        id: uid("assignment"),
+        request_id,
+        engineer_id,
+        assigned_at: now,
+      });
+    }
+
+    saveAssignments(assignments);
+    return getAssignmentForRequest(request_id);
+  }
+
   function getAssignedRequestsForEngineer(engineerId) {
     const assignment = getAssignments().find(
       (a) => a.engineer_id === engineerId,
@@ -189,6 +222,10 @@ const CSP = () => {
     logout,
     getRequests,
     getAssignments,
+    saveAssignments,
+    getEngineers,
+    getAssignmentForRequest,
+    assignRequest,
     saveRequest,
     getRequestById,
     getRequestsForClient,

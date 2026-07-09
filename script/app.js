@@ -139,9 +139,25 @@ if (requestInfo) {
     const commentsList = document.getElementById("comments-list");
     const addCommentForm = document.getElementById("add-comment-form");
     const internalCommentLabel = document.getElementById("internal-comment-label");
+    const assignmentSection = document.getElementById("assignment-section");
+    const assignEngineerForm = document.getElementById("assign-engineer-form");
+    const assignEngineerSelect = document.getElementById("assign-engineer-select");
 
     if (internalCommentLabel && currentUser.role === "client") {
       internalCommentLabel.style.display = "none";
+    }
+
+    if (assignmentSection) {
+      if (currentUser.role === "admin") {
+        Storage.getEngineers().forEach((engineer) => {
+          const option = document.createElement("option");
+          option.value = engineer.id;
+          option.textContent = engineer.name;
+          assignEngineerSelect.appendChild(option);
+        });
+      } else {
+        assignmentSection.style.display = "none";
+      }
     }
 
     function renderComments() {
@@ -176,6 +192,15 @@ if (requestInfo) {
       document.getElementById("request-status").textContent = request.status;
       document.getElementById("request-created").textContent = request.created_at;
 
+      const assignment = Storage.getAssignmentForRequest(request.id);
+      const assignedEngineer = assignment ? Storage.getUserById(assignment.engineer_id) : null;
+      document.getElementById("request-assigned-engineer").textContent = assignedEngineer
+        ? assignedEngineer.name
+        : "Unassigned";
+      if (assignEngineerSelect) {
+        assignEngineerSelect.value = assignment ? assignment.engineer_id : "";
+      }
+
       statusHistoryList.innerHTML = "";
       (request.status_history || []).forEach((entry) => {
         const li = document.createElement("li");
@@ -202,6 +227,18 @@ if (requestInfo) {
       }
 
       renderComments();
+    }
+
+    if (assignEngineerForm && currentUser.role === "admin") {
+      assignEngineerForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const engineerId = assignEngineerSelect.value;
+        if (!engineerId) return;
+
+        Storage.assignRequest({ request_id: requestId, engineer_id: engineerId });
+        renderRequest();
+      });
     }
 
     if (addCommentForm) {
