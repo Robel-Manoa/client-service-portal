@@ -53,7 +53,9 @@ const CSP = () => {
   }
 
   function login(email, password) {
-    const user = getUser().find((u) => u.email === email && u.password === password);
+    const user = getUser().find(
+      (u) => u.email === email && u.password === password,
+    );
     if (!user) return null;
     write(keys.currentUser, user);
     return user;
@@ -133,6 +135,83 @@ const CSP = () => {
     return request;
   }
 
+  function getAssignments() {
+    return read(keys.assignements) || [];
+  }
+
+  function saveAssignments(assignments) {
+    write(keys.assignements, assignments);
+  }
+
+  function getEngineers() {
+    return getUser().filter((u) => u.role === "engineer");
+  }
+
+  function getAssignmentForRequest(requestId) {
+    return getAssignments().find((a) => a.request_id === requestId);
+  }
+
+  function assignRequest({ request_id, engineer_id }) {
+    const assignments = getAssignments();
+    const existing = assignments.find((a) => a.request_id === request_id);
+    const now = new Date().toISOString();
+
+    if (existing) {
+      existing.engineer_id = engineer_id;
+      existing.assigned_at = now;
+    } else {
+      assignments.push({
+        id: uid("assignment"),
+        request_id,
+        engineer_id,
+        assigned_at: now,
+      });
+    }
+
+    saveAssignments(assignments);
+    return getAssignmentForRequest(request_id);
+  }
+
+  function getAssignedRequestsForEngineer(engineerId) {
+    const assignment = getAssignments().find(
+      (a) => a.engineer_id === engineerId,
+    );
+    if (!assignment) return [];
+    return assignment.request_ids
+      .map((requestId) => getRequestById(requestId))
+      .filter(Boolean);
+  }
+
+  function getComments() {
+    return read(keys.comments) || [];
+  }
+
+  function saveComments(comments) {
+    write(keys.comments, comments);
+  }
+
+  function getCommentsForRequest(requestId, { includeInternal }) {
+    return getComments()
+      .filter((c) => c.request_id === requestId)
+      .filter((c) => includeInternal || !c.is_internal)
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  }
+
+  function addComment({ request_id, user_id, content, is_internal }) {
+    const comments = getComments();
+    const newComment = {
+      id: uid("comment"),
+      request_id,
+      user_id,
+      content,
+      is_internal,
+      created_at: new Date().toISOString(),
+    };
+    comments.push(newComment);
+    saveComments(comments);
+    return newComment;
+  }
+
   return {
     init,
     getUser,
@@ -142,7 +221,11 @@ const CSP = () => {
     login,
     logout,
     getRequests,
-    getAssignements,
+    getAssignments,
+    saveAssignments,
+    getEngineers,
+    getAssignmentForRequest,
+    assignRequest,
     saveRequest,
     getRequestById,
     getRequestsForClient,
@@ -150,6 +233,11 @@ const CSP = () => {
     addRequest,
     canTransition,
     updateRequestStatus,
+    getAssignedRequestsForEngineer,
+    getComments,
+    saveComments,
+    getCommentsForRequest,
+    addComment,
   };
 };
 

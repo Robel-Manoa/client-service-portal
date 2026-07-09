@@ -136,6 +136,44 @@ if (requestInfo) {
     const requestId = params.get("id");
     const statusHistoryList = document.getElementById("status-history");
     const statusControls = document.getElementById("status-controls");
+    const commentsList = document.getElementById("comments-list");
+    const addCommentForm = document.getElementById("add-comment-form");
+    const internalCommentLabel = document.getElementById("internal-comment-label");
+    const assignmentSection = document.getElementById("assignment-section");
+    const assignEngineerForm = document.getElementById("assign-engineer-form");
+    const assignEngineerSelect = document.getElementById("assign-engineer-select");
+
+    if (internalCommentLabel && currentUser.role === "client") {
+      internalCommentLabel.style.display = "none";
+    }
+
+    if (assignmentSection) {
+      if (currentUser.role === "admin") {
+        Storage.getEngineers().forEach((engineer) => {
+          const option = document.createElement("option");
+          option.value = engineer.id;
+          option.textContent = engineer.name;
+          assignEngineerSelect.appendChild(option);
+        });
+      } else {
+        assignmentSection.style.display = "none";
+      }
+    }
+
+    function renderComments() {
+      commentsList.innerHTML = "";
+      const includeInternal = currentUser.role !== "client";
+      const comments = Storage.getCommentsForRequest(requestId, { includeInternal });
+
+      comments.forEach((comment) => {
+        const author = Storage.getUserById(comment.user_id);
+        const li = document.createElement("li");
+        li.textContent = `${author ? author.name : "Unknown"}${
+          comment.is_internal ? " (internal)" : ""
+        }: ${comment.content} - ${comment.created_at}`;
+        commentsList.appendChild(li);
+      });
+    }
 
     function renderRequest() {
       const request = Storage.getRequestById(requestId);
@@ -144,6 +182,7 @@ if (requestInfo) {
         requestInfo.innerHTML = "<p>Request not found.</p>";
         statusHistoryList.innerHTML = "";
         statusControls.innerHTML = "";
+        commentsList.innerHTML = "";
         return;
       }
 
@@ -152,6 +191,15 @@ if (requestInfo) {
       document.getElementById("request-priority").textContent = request.priority;
       document.getElementById("request-status").textContent = request.status;
       document.getElementById("request-created").textContent = request.created_at;
+
+      const assignment = Storage.getAssignmentForRequest(request.id);
+      const assignedEngineer = assignment ? Storage.getUserById(assignment.engineer_id) : null;
+      document.getElementById("request-assigned-engineer").textContent = assignedEngineer
+        ? assignedEngineer.name
+        : "Unassigned";
+      if (assignEngineerSelect) {
+        assignEngineerSelect.value = assignment ? assignment.engineer_id : "";
+      }
 
       statusHistoryList.innerHTML = "";
       (request.status_history || []).forEach((entry) => {
@@ -177,6 +225,41 @@ if (requestInfo) {
           statusControls.appendChild(button);
         });
       }
+
+      renderComments();
+    }
+
+    if (assignEngineerForm && currentUser.role === "admin") {
+      assignEngineerForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const engineerId = assignEngineerSelect.value;
+        if (!engineerId) return;
+
+        Storage.assignRequest({ request_id: requestId, engineer_id: engineerId });
+        renderRequest();
+      });
+    }
+
+    if (addCommentForm) {
+      addCommentForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const content = addCommentForm.content.value.trim();
+        if (!content) return;
+
+        const isInternal = currentUser.role !== "client" && addCommentForm.is_internal.checked;
+
+        Storage.addComment({
+          request_id: requestId,
+          user_id: currentUser.id,
+          content,
+          is_internal: isInternal,
+        });
+
+        addCommentForm.reset();
+        renderComments();
+      });
     }
 
     renderRequest();
