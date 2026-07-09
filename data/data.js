@@ -3,7 +3,7 @@ const data = {
     {
       id: "u1",
       name: "John Doe",
-      email: "john.doe@example.com",
+      email: "john.doe@gmail.com",
       password: "password123",
       role: "client",
       is_active: true,
@@ -13,7 +13,7 @@ const data = {
     {
       id: "u2",
       name: "Jane Smith",
-      email: "jane.smith@example.com",
+      email: "jane.smith@gmail.com",
       password: "password456",
       role: "engineer",
       is_active: true,
@@ -23,7 +23,7 @@ const data = {
     {
       id: "u3",
       name: "Bob Johnson",
-      email: "bob.johnson@example.com",
+      email: "bob.johnson@gmail.com",
       password: "password789",
       role: "admin",
       is_active: true,

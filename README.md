@@ -16,7 +16,6 @@ The project is divided into 2 phases: phase 1 deals with the structure and inter
 - Admin side: view new requests, view request details, change the status of customer requests
 - Engineer side : view of the requests assigned to them, ability to change the status of requests, view of client request details
 - In the details of customer requests, the data history feature already works, showing real-time changes in the status of customer requests
+- Responsive website: adapt to the requested screen sizes
 
 <hr/>
-
-The features requested in the specifications are almost all already implemented, but the user interface part is still in progress. I'm still running into a few problems with the app's responsiveness.
