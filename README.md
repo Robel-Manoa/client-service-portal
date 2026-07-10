@@ -8,11 +8,31 @@ Build a web application to improve and manage the customer request process. <br/
 
 The project is divided into 2 phases: phase 1 deals with the structure and interface of the application, phase 2 is for the implementation of a database and the server side.
 
-## User Roles 
-`Role` | `Who they are` |  `What they can do` |
+## User Roles
+
+`Role` | `Who they are` | `What they can do` |
 Client | An external company representative | Submit requests, view their own requests, add comments |
 Engineer | An internal company engineer | View assigned requests, update request status, add comments (internal or visible to client) |
-Admin | An internal administrator | Manage all requests, assign engineers to requests, manage user accounts | 
+Admin | An internal administrator | Manage all requests, assign engineers to requests, manage user accounts |
+
+### User account test
+
+- name: "John Doe",
+- email: "john.doe@gmail.com",
+- password: "password123",
+- role: "client"
+<hr/>
+
+name: "Jane Smith",
+email: "jane.smith@gmail.com",
+password: "password456",
+role: "engineer"
+<hr/>
+
+name: "Bob Johnson",
+email: "bob.johnson@gmail.com",
+password: "password789",
+role: "admin"
 
 ## Feature already implemented
 
@@ -26,3 +46,10 @@ Admin | An internal administrator | Manage all requests, assign engineers to req
 - The feature for adding comments and assigning requests
 
 <hr/>
+
+## Feature to implement and possibility of evolution
+
+- Manage user accounts 
+- Add Regex
+- Filter request list by date
+- Research request
