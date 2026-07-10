@@ -8,23 +8,37 @@
   </head>
   <body>
     <div class="body-content">
-      <h2>Client Service Portal</h2>
-      <form action="" id="loginForm">
-        <input
-          type="email"
-          name="email"
-          id="email"
-          placeholder="Enter your email"
-        />
-        <input
-          type="password"
-          name="password"
-          id="password"
-          placeholder="Enter your password"
-        />
-        <button type="submit">Login</button>
-        <div class="error-message"></div>
-      </form>
+      <div class="login-content">
+        <div class="app-desc">
+          <h2>Client Service Portal</h2>
+          <p>
+            The Client Service Portal (CSP) is a web application that brings
+            this process into a structured, role-based system
+          </p>
+          <p>
+            Clients use the portal to submit and track service requests.
+            Engineers manage their assigned requests and update statuses. Admins
+            oversee all requests, manage assignments, and administer user
+            accounts.
+          </p>
+        </div>
+        <form action="" id="loginForm">
+          <input
+            type="email"
+            name="email"
+            id="email"
+            placeholder="Enter your email"
+          />
+          <input
+            type="password"
+            name="password"
+            id="password"
+            placeholder="Enter your password"
+          />
+          <button type="submit">Login</button>
+          <div class="error-message"></div>
+        </form>
+      </div>
     </div>
     <script src="./data/data.js"></script>
     <script src="./script/storage.js"></script>

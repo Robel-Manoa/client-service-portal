@@ -4,7 +4,13 @@ const ROLE_HOME = {
   admin: "./index-admin.html",
 };
 
-const ALL_STATUSES = ["open", "in_progress", "pending_client", "resolved", "closed"];
+const ALL_STATUSES = [
+  "open",
+  "in_progress",
+  "pending_client",
+  "resolved",
+  "closed",
+];
 
 function requireAuth(requiredRole) {
   const user = Storage.getCurrentUser();
@@ -78,8 +84,10 @@ if (table && form && filterInput && pageRole) {
 
   if (currentUser) {
     let requests = [];
-    if (pageRole === "client") requests = Storage.getRequestsForClient(currentUser.id);
-    else if (pageRole === "engineer") requests = Storage.getRequestsForEngineer(currentUser.id);
+    if (pageRole === "client")
+      requests = Storage.getRequestsForClient(currentUser.id);
+    else if (pageRole === "engineer")
+      requests = Storage.getRequestsForEngineer(currentUser.id);
     else if (pageRole === "admin") requests = Storage.getRequests();
 
     renderTable(requests);
@@ -138,10 +146,14 @@ if (requestInfo) {
     const statusControls = document.getElementById("status-controls");
     const commentsList = document.getElementById("comments-list");
     const addCommentForm = document.getElementById("add-comment-form");
-    const internalCommentLabel = document.getElementById("internal-comment-label");
+    const internalCommentLabel = document.getElementById(
+      "internal-comment-label",
+    );
     const assignmentSection = document.getElementById("assignment-section");
     const assignEngineerForm = document.getElementById("assign-engineer-form");
-    const assignEngineerSelect = document.getElementById("assign-engineer-select");
+    const assignEngineerSelect = document.getElementById(
+      "assign-engineer-select",
+    );
 
     if (internalCommentLabel && currentUser.role === "client") {
       internalCommentLabel.style.display = "none";
@@ -163,7 +175,9 @@ if (requestInfo) {
     function renderComments() {
       commentsList.innerHTML = "";
       const includeInternal = currentUser.role !== "client";
-      const comments = Storage.getCommentsForRequest(requestId, { includeInternal });
+      const comments = Storage.getCommentsForRequest(requestId, {
+        includeInternal,
+      });
 
       comments.forEach((comment) => {
         const author = Storage.getUserById(comment.user_id);
@@ -187,16 +201,20 @@ if (requestInfo) {
       }
 
       document.getElementById("request-title").textContent = request.title;
-      document.getElementById("request-description").textContent = request.description;
-      document.getElementById("request-priority").textContent = request.priority;
+      document.getElementById("request-description").textContent =
+        request.description;
+      document.getElementById("request-priority").textContent =
+        request.priority;
       document.getElementById("request-status").textContent = request.status;
-      document.getElementById("request-created").textContent = request.created_at;
+      document.getElementById("request-created").textContent =
+        request.created_at;
 
       const assignment = Storage.getAssignmentForRequest(request.id);
-      const assignedEngineer = assignment ? Storage.getUserById(assignment.engineer_id) : null;
-      document.getElementById("request-assigned-engineer").textContent = assignedEngineer
-        ? assignedEngineer.name
-        : "Unassigned";
+      const assignedEngineer = assignment
+        ? Storage.getUserById(assignment.engineer_id)
+        : null;
+      document.getElementById("request-assigned-engineer").textContent =
+        assignedEngineer ? assignedEngineer.name : "Unassigned";
       if (assignEngineerSelect) {
         assignEngineerSelect.value = assignment ? assignment.engineer_id : "";
       }
@@ -211,7 +229,7 @@ if (requestInfo) {
       statusControls.innerHTML = "";
       if (currentUser.role !== "client") {
         const nextStatuses = ALL_STATUSES.filter((status) =>
-          Storage.canTransition(request.status, status)
+          Storage.canTransition(request.status, status),
         );
 
         nextStatuses.forEach((status) => {
@@ -236,7 +254,10 @@ if (requestInfo) {
         const engineerId = assignEngineerSelect.value;
         if (!engineerId) return;
 
-        Storage.assignRequest({ request_id: requestId, engineer_id: engineerId });
+        Storage.assignRequest({
+          request_id: requestId,
+          engineer_id: engineerId,
+        });
         renderRequest();
       });
     }
@@ -248,7 +269,8 @@ if (requestInfo) {
         const content = addCommentForm.content.value.trim();
         if (!content) return;
 
-        const isInternal = currentUser.role !== "client" && addCommentForm.is_internal.checked;
+        const isInternal =
+          currentUser.role !== "client" && addCommentForm.is_internal.checked;
 
         Storage.addComment({
           request_id: requestId,

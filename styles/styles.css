@@ -1,418 +1,275 @@
 * {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
-  scroll-behavior: smooth;
-  font-family: Verdana, Geneva, Tahoma, sans-serif;
-  list-style-type: none;
+  font-size: 1rem;
+  font-family: "Times New Roman", Times, serif;
+  color: var(--color);
+  background-color: var(--background-color);
   text-decoration: none;
+  list-style-type: none;
 }
 
 :root {
-  --color-primary: #3d5675;
-  --background-color: #d5cbbf;
+  --color: #fff;
+  --background-color: #000000;
+  --primary-color: #ff3535;
 }
 
-html,
-body {
-  max-width: 100%;
-  overflow-x: hidden;
+/* Login part : Start */
+
+.login-content {
+  position: relative;
+  display: flex;
+  justify-content: space-around;
+  padding: 10%;
+  flex-wrap: wrap;
 }
 
-img,
-table {
-  max-width: 100%;
+.login-content .app-desc {
+  width: 40%;
+  line-height: 1.5rem;
 }
 
-#loginForm {
+.login-content .app-desc h2 {
+  font-size: 2.5rem;
+  margin-bottom: 50px;
+  color: var(--primary-color);
+}
+
+.login-content #loginForm {
+  background-color: var(--color);
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: left;
-  justify-content: center;
-  gap: 20px;
-  border: none;
-  box-shadow: 1px 1px 5px 1px var(--color-primary);
-  padding: 5%;
-  background-color: var(--background-color);
+  padding: 20px;
+  width: 350px;
+  height: 250px;
+  border-radius: 10px;
+  box-shadow: 0px 0px 15px var(--primary-color);
 }
 
-#loginForm input {
-  height: 40px;
-  background-color: transparent;
+.login-content #loginForm input {
   border: none;
   outline: none;
-  border-bottom: 1px solid var(--color-primary);
-  color: var(--color-primary);
-}
-
-#loginForm button {
-  width: 100px;
-  height: 40px;
-  background-color: var(--color-primary);
+  border-bottom: 1px solid var(--background-color);
+  margin-bottom: 20px;
+  padding: 20px;
   color: var(--background-color);
-  font-weight: 300;
-  transition: ease-out 0.3s;
+  background-color: transparent;
 }
 
-#loginForm button:hover {
+.login-content #loginForm button {
+  width: 150px;
+  padding: 5px;
+  border: none;
+  transition: all 0.3s ease-in-out;
+}
+
+.login-content #loginForm button:hover {
+  background-color: transparent;
   cursor: pointer;
-  border-color: var(--color-primary);
-  background-color: var(--background-color);
-  color: var(--color-primary);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
 }
 
-#loginForm .error-message {
-  color: red;
-  font-size: 12px;
-  font-weight: 300;
+.login-content #loginForm .error-message {
+  color: var(--primary-color);
+  margin-top: 20px;
+  background-color: transparent;
 }
+
+/* Login part : End */
+
+/* Navigation Barre : Start */
 
 nav {
-  position: relative;
-  left: 0%;
-  right: 0%;
-  background-color: var(--background-color);
+  background-color: var(--color);
   padding: 10px;
+  width: 60%;
+  height: 30px;
+  margin-left: 20%;
+  margin-right: 20%;
+  margin-top: 15px;
+  margin-bottom: 5%;
+  border-radius: 50px;
 }
 
 nav ul {
+  background-color: transparent;
+  position: relative;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 20px;
+  justify-content: space-between;
 }
 
-nav ul li {
-  margin: 0;
-}
-
+nav ul li,
 nav ul li a {
-  display: inline-block;
-  color: var(--color-primary);
-  padding: 8px 5px;
+  background-color: transparent;
+  padding: 5px;
+  color: var(--background-color);
+  transition: all 0.3s ease-in-out;
 }
 
 nav ul li button {
-  background-color: var(--color-primary);
-  color: var(--background-color);
-  font-weight: 300;
-  transition: ease-out 0.3s;
-  padding: 5px;
+  background-color: var(--background-color);
   border: none;
+  color: var(--color);
+  transition: all 0.3s ease-in-out;
+  padding: 5px;
+  border-radius: 5px;
 }
 
 nav ul li button:hover {
+  background-color: transparent;
   cursor: pointer;
-  border-color: var(--color-primary);
-  background-color: var(--background-color);
-  color: var(--color-primary);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
 }
+
+/* Navigation Barre : End */
+
+/* Body content : start */
 
 .body-content {
   position: relative;
-  padding: 5%;
+  margin-left: 10%;
+  margin-right: 10%;
 }
+
+/* Body content : End  */
+
+/* Index client : Start  */
 
 .body-content h2 {
   font-size: 2rem;
+  color: var(--primary-color);
   margin-bottom: 20px;
 }
 
-.table-wrapper {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+.body-content form label {
+  margin-bottom: 10px;
+  display: block;
 }
 
-.body-content table {
-  width: 100%;
-  min-width: 500px;
-  border-collapse: collapse;
-  margin-top: 20px;
-  margin-bottom: 20px;
+.body-content form button {
+  background-color: var(--primary-color);
+  color: var(--color);
+  border: none;
+  padding: 5px;
+  border-radius: 5px;
+  transition: all 0.3s ease-in-out;
 }
 
-.body-content table tr {
-  border-bottom: 1px solid var(--color-primary);
+.body-content form button:hover {
+  background-color: transparent;
+  cursor: pointer;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
 }
 
-.body-content table tr th {
-  text-align: left;
-  padding: 10px;
-  color: var(--color-primary);
-}
-
-.body-content table tr td {
-  padding: 10px;
-  color: var(--color-primary);
-}
-
-.body-content a {
-  color: var(--color-primary);
-  text-decoration: none;
-  border: 1px solid var(--color-primary);
-  padding: 10px;
-}
-
-.body-content a:hover {
-  background-color: var(--color-primary);
+.body-content form select {
+  padding: 5px;
+  border-radius: 5px;
+  border: none;
+  outline: none;
+  background-color: var(--color);
   color: var(--background-color);
 }
 
-.body-content #filterForm {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
+.body-content .table-wrapper {
+  position: relative;
+  margin-top: 20px;
+  overflow-x: auto;
+  background-color: var(--color);
 }
 
-.body-content #filterForm label {
-  color: var(--color-primary);
-  font-weight: 300;
+.body-content .table-wrapper table {
+  width: 100%;
+  background-color: transparent;
+}
+
+.body-content .table-wrapper table tr th {
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.body-content .table-wrapper table tr td {
+  padding: 10px;
+  text-align: center;
+}
+
+.body-content .table-wrapper table tr td:nth-of-type(1) {
+  text-align: left;
+  font-size: 1.1rem;
+  font-weight: 400;
+  text-transform: capitalize;
+}
+
+/* Index client : End  */
+
+/* Request detail pages : Start */
+
+.body-content .dynamique-content {
+  position: relative;
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-top: 25px;
+}
+
+.body-content .dynamique-content #assignment-section h3,
+.body-content .dynamique-content #status-section h3,
+.body-content .dynamique-content #comment-section h3 {
+  color: var(--primary-color);
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  margin-top: 20px;
+}
+
+.body-content .dynamique-content #status-section #status-controls button {
+  background-color: var(--primary-color);
+  color: var(--color);
+  border: none;
+  padding: 5px;
+  border-radius: 5px;
+  transition: all 0.3s ease-in-out;
+  margin-top: 20px;
   margin-right: 10px;
 }
 
-.body-content #filterForm #filterInput {
-  width: 200px;
-  max-width: 100%;
-  height: 40px;
+.body-content .dynamique-content #status-section #status-controls button:hover {
   background-color: transparent;
-  border: none;
-  outline: none;
-  border-bottom: 1px solid var(--color-primary);
-  color: var(--color-primary);
-}
-
-.body-content #filterForm button {
-  width: 100px;
-  height: 40px;
-  background-color: var(--color-primary);
-  color: var(--background-color);
-  font-weight: 300;
-  transition: ease-out 0.3s;
-}
-
-.body-content #filterForm button:hover {
   cursor: pointer;
-  border-color: var(--color-primary);
-  background-color: var(--background-color);
-  color: var(--color-primary);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
 }
+
+.body-content .dynamique-content #comment-section #comments-list li {
+  margin-bottom: 10px;
+  list-style-type: square;
+}
+
+.body-content .dynamique-content #comment-section form textarea,
+.body-content #add-request-form textarea,
+.body-content #add-request-form input {
+  width: 100%;
+  background-color: var(--color);
+  color: var(--background-color);
+  padding: 10px;
+  margin-bottom: 5px;
+  outline: none;
+}
+
+/* Request detail pages : End  */
+
+/* Add request page : Start  */
 
 .body-content #add-request-form {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 5%;
+  gap: 20px;
+  width: 100%;
 }
 
-.body-content #add-request-form input,
-.body-content #add-request-form textarea,
-.body-content #add-request-form select {
-  height: 40px;
-  background-color: transparent;
-  border: none;
-  outline: none;
-  border-bottom: 1px solid var(--color-primary);
-  color: var(--color-primary);
-}
-
-.body-content #add-request-form button {
-  width: 100px;
-  height: 40px;
-  background-color: var(--color-primary);
-  color: var(--background-color);
-  font-weight: 300;
-  transition: ease-out 0.3s;
-}
-
-.body-content #add-request-form button:hover {
-  cursor: pointer;
-  border-color: var(--color-primary);
-  background-color: var(--background-color);
-  color: var(--color-primary);
-}
-
-#status-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-#status-controls button {
-  height: 40px;
-  padding: 0 15px;
-  border: none;
-  background-color: var(--color-primary);
-  color: var(--background-color);
-  font-weight: 300;
-  transition: ease-out 0.3s;
-}
-
-#status-controls button:hover {
-  cursor: pointer;
-  background-color: var(--background-color);
-  color: var(--color-primary);
-  border: 1px solid var(--color-primary);
-}
-
-.body-content #request-info {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 5%;
-}
-
-.body-content #assign-engineer-form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  padding: 5%;
-}
-
-.body-content #assign-engineer-form select {
-  height: 40px;
-  background-color: transparent;
-  border: none;
-  outline: none;
-  border-bottom: 1px solid var(--color-primary);
-  color: var(--color-primary);
-  max-width: 100%;
-}
-
-.body-content #assign-engineer-form button {
-  width: 100px;
-  height: 40px;
-  background-color: var(--color-primary);
-  color: var(--background-color);
-  font-weight: 300;
-  transition: ease-out 0.3s;
-}
-
-.body-content #assign-engineer-form button:hover {
-  cursor: pointer;
-  border-color: var(--color-primary);
-  background-color: var(--background-color);
-  color: var(--color-primary);
-}
-
-.body-content #status-history {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 25px;
-}
-
-.body-content #comments-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 25px;
-}
-
-.body-content #comments-list li {
-  border-bottom: 1px solid var(--color-primary);
-  padding-bottom: 10px;
-  color: var(--color-primary);
-  overflow-wrap: break-word;
-}
-
-.body-content #add-comment-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 5%;
-  max-width: 500px;
-}
-
-.body-content #add-comment-form textarea {
-  height: 80px;
-  background-color: transparent;
-  border: 1px solid var(--color-primary);
-  outline: none;
-  padding: 10px;
-  color: var(--color-primary);
-}
-
-.body-content #add-comment-form label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--color-primary);
-  font-weight: 300;
-}
-
-.body-content #add-comment-form button {
-  width: 150px;
-  height: 40px;
-  background-color: var(--color-primary);
-  color: var(--background-color);
-  font-weight: 300;
-  transition: ease-out 0.3s;
-}
-
-.body-content #add-comment-form button:hover {
-  cursor: pointer;
-  border-color: var(--color-primary);
-  background-color: var(--background-color);
-  color: var(--color-primary);
-}
-
-@media screen and (max-width: 480px) {
-  nav ul {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  nav ul li a,
-  nav ul li button {
-    display: block;
-    width: 100%;
-    text-align: center;
-  }
-
-  .body-content {
-    padding: 5% 4%;
-  }
-
-  .body-content #filterForm,
-  .body-content #add-request-form,
-  .body-content #assign-engineer-form {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .body-content #filterForm #filterInput,
-  .body-content #add-request-form input,
-  .body-content #add-request-form textarea,
-  .body-content #add-request-form select,
-  .body-content #assign-engineer-form select {
-    width: 100%;
-  }
-
-  .body-content #filterForm button,
-  .body-content #add-request-form button,
-  .body-content #add-comment-form button,
-  .body-content #assign-engineer-form button {
-    width: 100%;
-  }
-}
-
-@media screen and (min-width: 376px) and (max-width: 1280px) {
-  .body-content #loginForm {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: left;
-    justify-content: center;
-    gap: 20px;
-    border: none;
-    box-shadow: 1px 1px 5px 1px var(--color-primary);
-    padding: 5%;
-    width: 50%;
-    background-color: var(--background-color);
-  }
-}
+/* Add request page : End  */

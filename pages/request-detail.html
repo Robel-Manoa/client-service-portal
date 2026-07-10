@@ -1,12 +1,12 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../styles/styles.css">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../styles/styles.css" />
     <title>Client Service Portal</title>
-</head>
-<body>
+  </head>
+  <body>
     <nav>
       <ul>
         <li><a href="./index-client.html" id="homeLink">Home</a></li>
@@ -18,50 +18,60 @@
       <h2>Request Details</h2>
       <div id="request-info">
         <p><strong>Title:</strong> <span id="request-title"></span></p>
-        <p><strong>Description:</strong> <span id="request-description"></span></p>
+        <p>
+          <strong>Description:</strong> <span id="request-description"></span>
+        </p>
         <p><strong>Priority:</strong> <span id="request-priority"></span></p>
         <p><strong>Status:</strong> <span id="request-status"></span></p>
         <p><strong>Created:</strong> <span id="request-created"></span></p>
-        <p><strong>Assigned Engineer:</strong> <span id="request-assigned-engineer"></span></p>
+        <p>
+          <strong>Assigned Engineer:</strong>
+          <span id="request-assigned-engineer"></span>
+        </p>
       </div>
 
-      <div id="assignment-section">
-        <h3>Assign Engineer</h3>
-        <form action="" method="post" id="assign-engineer-form">
-          <label for="assign-engineer-select">Engineer</label>
-          <select id="assign-engineer-select" name="engineer_id" required>
-            <option value="">Select engineer</option>
-          </select>
-          <button type="submit">Assign</button>
-        </form>
+      <div class="dynamique-content">
+        <div id="assignment-section">
+          <h3>Assign Engineer</h3>
+          <form action="" method="post" id="assign-engineer-form">
+            <label for="assign-engineer-select">Engineer</label>
+            <select id="assign-engineer-select" name="engineer_id" required>
+              <option value="">Select engineer</option>
+            </select>
+            <button type="submit">Assign</button>
+          </form>
+        </div>
+
+        <div id="status-section">
+          <h3>Status history</h3>
+          <ul id="status-history"></ul>
+          <div id="status-controls"></div>
+        </div>
+
+        <div id="comment-section">
+          <h3>Comments</h3>
+          <ul id="comments-list"></ul>
+
+          <form action="" method="post" id="add-comment-form">
+            <label for="comment-content">Add a comment</label>
+            <textarea
+              name="content"
+              id="comment-content"
+              placeholder="Write a comment"
+              required
+            ></textarea>
+            <label id="internal-comment-label" for="comment-internal">
+              <input type="checkbox" name="is_internal" id="comment-internal" />
+              Internal comment (not visible to client)
+            </label>
+            <button type="submit">Post comment</button>
+          </form>
+        </div>
       </div>
-
-      <h3>Status history</h3>
-      <ul id="status-history"></ul>
-
-      <div id="status-controls"></div>
-
-      <h3>Comments</h3>
-      <ul id="comments-list"></ul>
-
-      <form action="" method="post" id="add-comment-form">
-        <label for="comment-content">Add a comment</label>
-        <textarea
-          name="content"
-          id="comment-content"
-          placeholder="Write a comment"
-          required
-        ></textarea>
-        <label id="internal-comment-label" for="comment-internal">
-          <input type="checkbox" name="is_internal" id="comment-internal" />
-          Internal comment (not visible to client)
-        </label>
-        <button type="submit">Post comment</button>
-      </form>
     </div>
 
     <script src="../data/data.js"></script>
     <script src="../script/storage.js"></script>
     <script src="../script/app.js"></script>
-</body>
+  </body>
 </html>

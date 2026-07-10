@@ -8,6 +8,12 @@ Build a web application to improve and manage the customer request process. <br/
 
 The project is divided into 2 phases: phase 1 deals with the structure and interface of the application, phase 2 is for the implementation of a database and the server side.
 
+## User Roles 
+`Role` | `Who they are` |  `What they can do` |
+Client | An external company representative | Submit requests, view their own requests, add comments |
+Engineer | An internal company engineer | View assigned requests, update request status, add comments (internal or visible to client) |
+Admin | An internal administrator | Manage all requests, assign engineers to requests, manage user accounts | 
+
 ## Feature already implemented
 
 - The use of localStorage and sessionStorage
@@ -17,5 +23,6 @@ The project is divided into 2 phases: phase 1 deals with the structure and inter
 - Engineer side : view of the requests assigned to them, ability to change the status of requests, view of client request details
 - In the details of customer requests, the data history feature already works, showing real-time changes in the status of customer requests
 - Responsive website: adapt to the requested screen sizes
+- The feature for adding comments and assigning requests
 
 <hr/>
