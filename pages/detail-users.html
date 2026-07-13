@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../styles/styles.css" />
+    <title>Client Servir Portal</title>
+  </head>
+  <body>
+    <nav>
+      <ul>
+        <li><a href="./index-admin.html" id="homeLink">Home</a></li>
+        <li><a href="./client-list.html">Client List</a></li>
+        <li><button type="button" id="logoutButton">Log out</button></li>
+      </ul>
+    </nav>
+
+    <div class="body-content">
+      <div class="user-profile">
+        <h2>Personnal info</h2>
+        <ul>
+          <li>Id : <span id="id-user"></span></li>
+          <li>Name : <span id="name-user"></span></li>
+          <li>Email adress : <span id="email-user"></span></li>
+          <li>Role : <span id="role-user"></span></li>
+          <li>Account status : <span id="account-user"></span></li>
+        </ul>
+
+        <div id="user-requests-section">
+          <h2>Request list</h2>
+          <div id="user-requests-list"></div>
+        </div>
+      </div>
+
+      <div id="user-admin-actions">
+        <h2>Edit user</h2>
+        <form action="" method="post" id="edit-user-form">
+          <label for="edit-user-name">Name</label>
+          <input type="text" name="name" id="edit-user-name" required />
+          <label for="edit-user-email">Email</label>
+          <input type="email" name="email" id="edit-user-email" required />
+          <label for="edit-user-role">Role</label>
+          <select name="role" id="edit-user-role" required>
+            <option value="client">Client</option>
+            <option value="engineer">Engineer</option>
+            <option value="admin">Admin</option>
+          </select>
+          <label for="edit-user-active">
+            <input type="checkbox" name="is_active" id="edit-user-active" />
+            Active
+          </label>
+          <button type="submit">Save changes</button>
+        </form>
+        <button type="button" id="delete-user-button">Delete user</button>
+      </div>
+    </div>
+
+    <script src="../data/data.js"></script>
+    <script src="../script/storage.js"></script>
+    <script src="../script/app.js"></script>
+  </body>
+</html>

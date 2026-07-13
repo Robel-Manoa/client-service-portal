@@ -273,3 +273,34 @@ nav ul li button:hover {
 }
 
 /* Add request page : End  */
+
+/* client list page : Start  */
+
+.body-content #clients-list ul{
+  background-color: var(--color);
+  padding: 10px;
+  margin-bottom: 20px;
+  margin-right: 10px;
+  width: 200px;
+  display: inline-block;
+}
+
+.body-content #clients-list ul li, .body-content #clients-list ul li a{
+  background-color: transparent;
+  color: var(--background-color);
+}
+
+.body-content #clients-list ul li:nth-of-type(4){
+  color: red;
+  margin-top: 10px;
+  border-top: 1px solid var(--background-color);
+  padding-top: 10px;
+}
+
+.body-content #clients-list ul li a{
+  color: var(--primary-color);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* client list page : End  */

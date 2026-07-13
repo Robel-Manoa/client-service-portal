@@ -18,9 +18,14 @@ function requireAuth(requiredRole) {
     window.location.href = "../index.html";
     return null;
   }
-  if (requiredRole && user.role !== requiredRole) {
-    window.location.href = "../index.html";
-    return null;
+  if (requiredRole) {
+    const allowedRoles = Array.isArray(requiredRole)
+      ? requiredRole
+      : [requiredRole];
+    if (!allowedRoles.includes(user.role)) {
+      window.location.href = "../index.html";
+      return null;
+    }
   }
   return user;
 }
@@ -54,6 +59,79 @@ if (logoutButton) {
     Storage.logout();
     window.location.href = "../index.html";
   });
+}
+
+const lists = document.getElementById("clients-list");
+
+const ROLE_COLORS = {
+  client: "green",
+  engineer: "blue",
+  admin: "red",
+};
+
+function userList(users) {
+  lists.innerHTML = "";
+
+  users.forEach((user) => {
+    const row = document.createElement("ul");
+
+    row.innerHTML = `
+      <li>${user.name}</li>
+      <li>${user.email}</li>
+      <li class="roles">${user.role}</li>
+      <li><a href="./detail-users.html?id=${user.id}">View details</a></li>
+    `;
+
+    const roleItem = row.querySelector(".roles");
+    roleItem.style.backgroundColor = ROLE_COLORS[user.role] || "";
+    roleItem.style.padding = "5px";
+    roleItem.style.width = "60px";
+    roleItem.style.color = "white";
+    roleItem.style.marginTop = "10px";
+    roleItem.style.borderRadius = "10px";
+    roleItem.style.textAlign = "center";
+
+    lists.appendChild(row);
+  });
+}
+
+const addUserForm = document.getElementById("add-user-form");
+const adminActions = document.getElementById("admin-actions");
+
+if (lists) {
+  const currentUser = requireAuth(["admin", "engineer"]);
+
+  if (currentUser) {
+    const homeLink = document.getElementById("homeLink");
+    if (homeLink) homeLink.href = ROLE_HOME[currentUser.role];
+
+    userList(Storage.getUser());
+
+    if (currentUser.role === "admin") {
+      if (addUserForm) {
+        addUserForm.addEventListener("submit", function (event) {
+          event.preventDefault();
+
+          const created = Storage.createUser({
+            name: addUserForm.name.value,
+            email: addUserForm.email.value,
+            password: addUserForm.password.value,
+            role: addUserForm.role.value,
+          });
+
+          if (!created) {
+            alert("A user with this email already exists.");
+            return;
+          }
+
+          addUserForm.reset();
+          userList(Storage.getUser());
+        });
+      }
+    } else if (adminActions) {
+      adminActions.remove();
+    }
+  }
 }
 
 const table = document.querySelector("table");
@@ -285,5 +363,116 @@ if (requestInfo) {
     }
 
     renderRequest();
+  }
+}
+
+const userProfile = document.querySelector(".user-profile");
+
+if (userProfile) {
+  const currentUser = requireAuth(["admin", "engineer"]);
+
+  if (currentUser) {
+    const homeLink = document.getElementById("homeLink");
+    if (homeLink) homeLink.href = ROLE_HOME[currentUser.role];
+
+    const params = new URLSearchParams(window.location.search);
+    const userId = params.get("id");
+
+    const requestsSection = document.getElementById("user-requests-section");
+    const requestsList = document.getElementById("user-requests-list");
+    const adminSection = document.getElementById("user-admin-actions");
+    const editUserForm = document.getElementById("edit-user-form");
+    const deleteUserButton = document.getElementById("delete-user-button");
+
+    if (currentUser.role !== "admin" && adminSection) {
+      adminSection.remove();
+    }
+
+    function renderUserRequests(user) {
+      requestsList.innerHTML = "";
+
+      let requests = [];
+      if (user.role === "client")
+        requests = Storage.getRequestsForClient(user.id);
+      else if (user.role === "engineer")
+        requests = Storage.getRequestsForEngineer(user.id);
+
+      if (!requests.length) {
+        requestsSection.style.display = "none";
+        return;
+      }
+
+      requestsSection.style.display = "";
+      requests.forEach((request) => {
+        const row = document.createElement("ul");
+
+        row.innerHTML = `
+          <li>Title : ${request.title}</li>
+          <li>Description : ${request.description}</li>
+          <li>Priority : ${request.priority}</li>
+          <li>Status : ${request.status}</li>
+          <li><a href="./request-detail.html?id=${request.id}">View details</a></li>
+        `;
+
+        requestsList.appendChild(row);
+      });
+    }
+
+    function renderUser() {
+      const user = Storage.getUserById(userId);
+
+      if (!user) {
+        document.querySelector(".user-profile").innerHTML =
+          "<p>User not found.</p>";
+        if (adminSection) adminSection.remove();
+        return;
+      }
+
+      document.getElementById("id-user").textContent = user.id;
+      document.getElementById("name-user").textContent = user.name;
+      document.getElementById("email-user").textContent = user.email;
+      document.getElementById("role-user").textContent = user.role;
+      document.getElementById("account-user").textContent = user.is_active
+        ? "Active"
+        : "Inactive";
+
+      renderUserRequests(user);
+
+      if (editUserForm && currentUser.role === "admin") {
+        editUserForm.name.value = user.name;
+        editUserForm.email.value = user.email;
+        editUserForm.role.value = user.role;
+        editUserForm.is_active.checked = user.is_active;
+      }
+    }
+
+    if (editUserForm) {
+      editUserForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        Storage.updateUser(userId, {
+          name: editUserForm.name.value,
+          email: editUserForm.email.value,
+          role: editUserForm.role.value,
+          is_active: editUserForm.is_active.checked,
+        });
+
+        renderUser();
+      });
+    }
+
+    if (deleteUserButton) {
+      deleteUserButton.addEventListener("click", function () {
+        if (userId === currentUser.id) {
+          alert("You cannot delete your own account.");
+          return;
+        }
+
+        Storage.deleteUser(userId);
+        window.location.href = "./client-list.html";
+      });
+    }
+
+    renderUser();
   }
 }
