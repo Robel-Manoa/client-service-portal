@@ -303,4 +303,77 @@ nav ul li button:hover {
   cursor: pointer;
 }
 
+.body-content #admin-actions{
+  display: none;
+  position: absolute;
+  width: 100%;
+  top: 3%;
+}
+
+.body-content #admin-actions form{
+  position: relative;
+  background-color: var(--color);
+  padding: 10px;
+  width: 30%;
+  border-radius: 10px;
+}
+
+.body-content #admin-actions form input{
+  border: none;
+   color: var(--background-color);
+  border-bottom: 1px solid var(--background-color);
+  padding: 10px;
+  margin-bottom : 10px;
+  background-color: transparent;
+  width: 90%;
+  outline: none;
+}
+
+.body-content #admin-actions form label{
+  background-color: transparent;
+  color: var(--background-color);
+}
+
+.body-content #admin-actions form #cancel-btn{
+  border: 1px solid var(--primary-color);
+  background-color: transparent;
+  color: var(--background-color);
+  transition: ease-out;
+  float: right;
+}
+
+.body-content #admin-actions form #cancel-btn:hover{
+  background-color: var(--primary-color);
+  color: var(--color);
+}
+
+.body-content h2 #add-btn{
+  cursor: pointer;
+  border: 1px solid var(--primary-color);
+  font-weight: 500;
+  padding: 5px;
+  transition: 0.3s ease-out;
+}
+
+.body-content h2 #add-btn:hover{
+  background-color: var(--primary-color);
+  color: var(--color);
+}
+
+@media screen and (max-width: 400px) {
+  .body-content #admin-actions{
+    top: 0%;
+    width: 100%;
+    height: 100vh;
+  }
+
+  .body-content #admin-actions form{
+    width: 100%;
+  }
+  .body-content #clients-list ul{
+    width: 100%;
+    font-size: 18pt;
+  }
+}
+
 /* client list page : End  */

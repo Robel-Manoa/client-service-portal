@@ -44,6 +44,7 @@ role: "admin"
 - In the details of customer requests, the data history feature already works, showing real-time changes in the status of customer requests
 - Responsive website: adapt to the requested screen sizes
 - The feature for adding comments and assigning requests
+- CRUD user by admin
 
 <hr/>
 

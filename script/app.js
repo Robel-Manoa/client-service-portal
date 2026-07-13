@@ -98,6 +98,14 @@ function userList(users) {
 const addUserForm = document.getElementById("add-user-form");
 const adminActions = document.getElementById("admin-actions");
 
+function showForm(){
+  adminActions.style.display = "block";
+}
+
+function removeForm(){
+  adminActions.style.display = "none";
+}
+
 if (lists) {
   const currentUser = requireAuth(["admin", "engineer"]);
 
