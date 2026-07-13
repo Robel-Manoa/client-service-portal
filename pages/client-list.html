@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../styles/styles.css" />
+    <title>Client Service Portal</title>
+  </head>
+  <body>
+    <nav>
+      <ul>
+        <li><a href="./index-admin.html" id="homeLink">Home</a></li>
+        <li><a href="./client-list.html">User List</a></li>
+        <li><button type="button" id="logoutButton">Log out</button></li>
+      </ul>
+    </nav>
+
+    <div class="body-content">
+      <h2>All Users <button onclick="showForm()" id="add-btn">Add user</button></h2>
+      <div id="clients-list"></div>
+
+      <div id="admin-actions">
+        <h2>Add user</h2>
+        <form action="" method="post" id="add-user-form">
+          <input
+            type="text"
+            name="name"
+            id="add-user-name"
+            required
+            placeholder="Enter the name"
+          />
+
+          <input
+            type="email"
+            name="email"
+            id="add-user-email"
+            required
+            placeholder="Enter the email adress"
+          />
+
+          <input
+            type="password"
+            name="password"
+            id="add-user-password"
+            required
+            placeholder="Enter the password"
+          />
+          <label for="add-user-role"
+            >Role :
+            <select name="role" id="add-user-role" required>
+              <option value="client">Client</option>
+              <option value="engineer">Engineer</option>
+              <option value="admin">Admin</option>
+            </select></label
+          >
+
+          <button type="submit">Add user</button>
+          <button onclick="removeForm()" id="cancel-btn">Cancel</button>
+        </form>
+      </div>
+    </div>
+
+    <script src="../data/data.js"></script>
+    <script src="../script/storage.js"></script>
+    <script src="../script/app.js"></script>
+  </body>
+</html>

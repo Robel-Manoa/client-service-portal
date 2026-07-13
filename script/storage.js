@@ -147,6 +147,42 @@ const CSP = () => {
     return getUser().filter((u) => u.role === "engineer");
   }
 
+  function createUser({ name, email, password, role }) {
+    const users = getUser();
+    if (users.some((u) => u.email === email)) return null;
+
+    const now = new Date().toISOString();
+    const newUser = {
+      id: uid("user"),
+      name,
+      email,
+      password,
+      role,
+      is_active: true,
+      created_at: now,
+      updated_at: now,
+    };
+
+    users.push(newUser);
+    write(keys.user, users);
+    return newUser;
+  }
+
+  function updateUser(id, updates) {
+    const users = getUser();
+    const user = users.find((u) => u.id === id);
+    if (!user) return null;
+
+    Object.assign(user, updates, { updated_at: new Date().toISOString() });
+    write(keys.user, users);
+    return user;
+  }
+
+  function deleteUser(id) {
+    const users = getUser().filter((u) => u.id !== id);
+    write(keys.user, users);
+  }
+
   function getAssignmentForRequest(requestId) {
     return getAssignments().find((a) => a.request_id === requestId);
   }
@@ -224,6 +260,9 @@ const CSP = () => {
     getAssignments,
     saveAssignments,
     getEngineers,
+    createUser,
+    updateUser,
+    deleteUser,
     getAssignmentForRequest,
     assignRequest,
     saveRequest,
