@@ -23,16 +23,16 @@ Admin | An internal administrator | Manage all requests, assign engineers to req
 - role: "client"
 <hr/>
 
-name: "Jane Smith",
-email: "jane.smith@gmail.com",
-password: "password456",
-role: "engineer"
+- name: "Jane Smith",
+- email: "jane.smith@gmail.com",
+- assword: "password456",
+- role: "engineer"
 <hr/>
 
-name: "Bob Johnson",
-email: "bob.johnson@gmail.com",
-password: "password789",
-role: "admin"
+- name: "Bob Johnson",
+- email: "bob.johnson@gmail.com",
+- password: "password789",
+- role: "admin"
 
 ## Feature already implemented
 
@@ -50,7 +50,6 @@ role: "admin"
 
 ## Feature to implement and possibility of evolution
 
-- Manage user accounts 
 - Add Regex
 - Filter request list by date
 - Research request

@@ -25,6 +25,7 @@
           <li>Role : <span id="role-user"></span></li>
           <li>Account status : <span id="account-user"></span></li>
         </ul>
+        <button onclick="showFormEdit()" id="edit-btn">Edit user</button>
 
         <div id="user-requests-section">
           <h2>Request list</h2>
@@ -35,9 +36,9 @@
       <div id="user-admin-actions">
         <h2>Edit user</h2>
         <form action="" method="post" id="edit-user-form">
-          <label for="edit-user-name">Name</label>
+          <label for="edit-user-name">Name :</label>
           <input type="text" name="name" id="edit-user-name" required />
-          <label for="edit-user-email">Email</label>
+          <label for="edit-user-email">Email :</label>
           <input type="email" name="email" id="edit-user-email" required />
           <label for="edit-user-role">Role</label>
           <select name="role" id="edit-user-role" required>
@@ -50,9 +51,10 @@
             Active
           </label>
           <button type="submit">Save changes</button>
+          <button onclick="removeFormEdit()" id="cancel-btn">Cancel</button>
         </form>
-        <button type="button" id="delete-user-button">Delete user</button>
       </div>
+      <button type="button" id="delete-user-button">Delete user</button>
     </div>
 
     <script src="../data/data.js"></script>
