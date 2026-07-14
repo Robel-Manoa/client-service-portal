@@ -99,16 +99,16 @@ const addUserForm = document.getElementById("add-user-form");
 const adminActions = document.getElementById("admin-actions");
 const editUser = document.getElementById("user-admin-actions");
 
-function showForm(){
+function showForm() {
   adminActions.style.display = "block";
   editUser.style.display = "block";
 }
 
-function showFormEdit(){
+function showFormEdit() {
   editUser.style.display = "block";
 }
 
-function removeFormEdit(){
+function removeFormEdit() {
   editUser.style.display = "none";
 }
 
