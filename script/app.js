@@ -1,9 +1,23 @@
+// @ts-check
+
+/**
+ * Page orchestration for the Client Service Portal.
+ *
+ * This single script is loaded on every page (see each `pages/*.html`
+ * file). Each block below guards itself behind the DOM elements it
+ * needs, so one script can safely drive several different pages without erroring on elements
+ * that don't exist there. storage (script/storage.js) is the shared
+ * data layer; this file only ever reads through it and manipulates the
+ * DOM — it never touches sessionStorage directly.
+ */
+
 const ROLE_HOME = {
   client: "./index-client.html",
   engineer: "./index-engineer.html",
   admin: "./index-admin.html",
 };
 
+/** @type {RequestStatus[]} */
 const ALL_STATUSES = [
   "open",
   "in_progress",
@@ -12,8 +26,34 @@ const ALL_STATUSES = [
   "closed",
 ];
 
+/**
+ * Clones a <template>'s content and fills its text-only [data-field]
+ * slots. Using native <template> instead of building markup from string interpolation keeps
+ * user-entered values (names, titles, comments, ...) out of innerHTML
+ * entirely, so there is no HTML-escaping to get right or forget.
+ * @param {HTMLTemplateElement} template
+ * @param {Record<string, string>} fields
+ * @returns {DocumentFragment}
+ */
+function cloneTemplate(template, fields) {
+  const fragment = /** @type {DocumentFragment} */ (
+    template.content.cloneNode(true)
+  );
+  for (const [field, value] of Object.entries(fields)) {
+    const el = fragment.querySelector(`[data-field="${field}"]`);
+    if (el) el.textContent = value;
+  }
+  return fragment;
+}
+
+/**
+ * Access-control gatekeeper. Redirects to the login page if no user is
+ * logged in, or if the logged-in user's role isn't part of requiredRole.
+ * @param {UserRole | UserRole[]} [requiredRole] a single role or list of allowed roles
+ * @returns {User | null} the current user, or `null` if redirected away
+ */
 function requireAuth(requiredRole) {
-  const user = Storage.getCurrentUser();
+  const user = storage.getCurrentUser();
   if (!user) {
     window.location.href = "../index.html";
     return null;
@@ -30,19 +70,30 @@ function requireAuth(requiredRole) {
   return user;
 }
 
-const loginForm = document.getElementById("loginForm");
+// --- Login / logout -----------------------------------------------------
+
+const loginForm = /** @type {HTMLFormElement | null} */ (
+  document.getElementById("loginForm")
+);
 
 if (loginForm) {
   loginForm.addEventListener("submit", function (event) {
     event.preventDefault();
 
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+    const email = /** @type {HTMLInputElement} */ (
+      document.getElementById("email")
+    ).value;
+    const password = /** @type {HTMLInputElement} */ (
+      document.getElementById("password")
+    ).value;
     const errorMessage = document.querySelector(".error-message");
 
-    const user = Storage.login(email, password);
+    const user = storage.login(email, password);
     if (!user) {
-      errorMessage.textContent = "Invalid email or password. Please try again.";
+      if (errorMessage) {
+        errorMessage.textContent =
+          "Invalid email or password. Please try again.";
+      }
       return;
     }
 
@@ -56,60 +107,77 @@ if (logoutButton) {
   logoutButton.addEventListener("click", function (event) {
     event.preventDefault();
 
-    Storage.logout();
+    storage.logout();
     window.location.href = "../index.html";
   });
 }
 
+// --- User list (client-list.html) ---------------------------------------
+
 const lists = document.getElementById("clients-list");
+const userRowTemplate = /** @type {HTMLTemplateElement | null} */ (
+  document.getElementById("user-row-template")
+);
 
-const ROLE_COLORS = {
-  client: "green",
-  engineer: "blue",
-  admin: "red",
-};
-
+/**
+ * Renders the user table on the admin/engineer client list page.
+ * @param {User[]} users
+ * @returns {void}
+ */
 function userList(users) {
+  if (!lists || !userRowTemplate) return;
   lists.innerHTML = "";
 
   users.forEach((user) => {
-    const row = document.createElement("ul");
+    const row = cloneTemplate(userRowTemplate, {
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
 
-    row.innerHTML = `
-      <li>${user.name}</li>
-      <li>${user.email}</li>
-      <li class="roles">${user.role}</li>
-      <li><a href="./detail-users.html?id=${user.id}">View details</a></li>
-    `;
+    row
+      .querySelector('[data-field="role"]')
+      ?.classList.add(`role-badge--${user.role}`);
 
-    const roleItem = row.querySelector(".roles");
-    roleItem.style.backgroundColor = ROLE_COLORS[user.role] || "";
-    roleItem.style.padding = "5px";
-    roleItem.style.width = "60px";
-    roleItem.style.color = "white";
-    roleItem.style.marginTop = "10px";
-    roleItem.style.borderRadius = "10px";
-    roleItem.style.textAlign = "center";
+    const link = /** @type {HTMLAnchorElement | null} */ (
+      row.querySelector('[data-field="link"]')
+    );
+    if (link) {
+      link.href = `./detail-users.html?id=${encodeURIComponent(user.id)}`;
+    }
 
     lists.appendChild(row);
   });
 }
 
-const addUserForm = document.getElementById("add-user-form");
+const addUserForm = /** @type {HTMLFormElement | null} */ (
+  document.getElementById("add-user-form")
+);
 const adminActions = document.getElementById("admin-actions");
 const editUser = document.getElementById("user-admin-actions");
 
+// Called from inline onclick attributes in client-list.html and
+// detail-users.html — each pair only ever exists on its own page, so a
+// missing element (null) is expected on the other page and simply ignored.
+
+/** @returns {void} */
 function showForm() {
-  adminActions.style.display = "block";
-  editUser.style.display = "block";
+  if (adminActions) adminActions.style.display = "block";
 }
 
+/** @returns {void} */
+function removeForm() {
+  if (adminActions) adminActions.style.display = "none";
+}
+
+/** @returns {void} */
 function showFormEdit() {
-  editUser.style.display = "block";
+  if (editUser) editUser.style.display = "block";
 }
 
+/** @returns {void} */
 function removeFormEdit() {
-  editUser.style.display = "none";
+  if (editUser) editUser.style.display = "none";
 }
 
 if (lists) {
@@ -117,20 +185,35 @@ if (lists) {
 
   if (currentUser) {
     const homeLink = document.getElementById("homeLink");
-    if (homeLink) homeLink.href = ROLE_HOME[currentUser.role];
+    if (homeLink instanceof HTMLAnchorElement) {
+      homeLink.href = ROLE_HOME[currentUser.role];
+    }
 
-    userList(Storage.getUser());
+    userList(storage.getUsers());
 
     if (currentUser.role === "admin") {
       if (addUserForm) {
         addUserForm.addEventListener("submit", function (event) {
           event.preventDefault();
 
-          const created = Storage.createUser({
-            name: addUserForm.name.value,
+          // Read "name" and "role" by id, not addUserForm.name/.role:
+          // HTMLFormElement already has its own name IDL attribute, and
+          // every Element already has a role IDL attribute.
+          // Both shadow a same-named child control accessed via dot
+          // notation, so the bare form.name / form.role never reach the
+          // input/select below.
+          const nameInput = /** @type {HTMLInputElement} */ (
+            document.getElementById("add-user-name")
+          );
+          const roleSelect = /** @type {HTMLSelectElement} */ (
+            document.getElementById("add-user-role")
+          );
+
+          const created = storage.createUser({
+            name: nameInput.value,
             email: addUserForm.email.value,
             password: addUserForm.password.value,
-            role: addUserForm.role.value,
+            role: /** @type {UserRole} */ (roleSelect.value),
           });
 
           if (!created) {
@@ -139,7 +222,7 @@ if (lists) {
           }
 
           addUserForm.reset();
-          userList(Storage.getUser());
+          userList(storage.getUsers());
         });
       }
     } else if (adminActions) {
@@ -148,39 +231,59 @@ if (lists) {
   }
 }
 
-const table = document.querySelector("table");
-const form = document.getElementById("filterForm");
-const filterInput = document.getElementById("filterInput");
-const pageRole = document.body.dataset.role;
+// --- Requests table (dashboards) -----------------------------------------
 
+const tableBody = document.getElementById("requests-table-body");
+const requestRowTemplate = /** @type {HTMLTemplateElement | null} */ (
+  document.getElementById("request-row-template")
+);
+const form = document.getElementById("filterForm");
+const filterInput = /** @type {HTMLInputElement | null} */ (
+  document.getElementById("filterInput")
+);
+const pageRole = /** @type {UserRole | undefined} */ (
+  /** @type {HTMLElement} */ (document.body).dataset.role
+);
+
+/**
+ * Renders the requests table shared by the client, engineer, and admin
+ * dashboards.
+ * @param {ServiceRequest[]} requests
+ * @returns {void}
+ */
 function renderTable(requests) {
-  table.querySelectorAll("tr:not(:first-child)").forEach((row) => row.remove());
+  if (!tableBody || !requestRowTemplate) return;
+  tableBody.innerHTML = "";
 
   requests.forEach((request) => {
-    const row = document.createElement("tr");
+    const row = cloneTemplate(requestRowTemplate, {
+      title: request.title,
+      priority: request.priority,
+      status: request.status,
+      created_at: request.created_at,
+    });
 
-    row.innerHTML = `
-            <td>${request.title}</td>
-            <td>${request.priority}</td>
-            <td>${request.status}</td>
-            <td>${request.created_at}</td>
-            <td><a href="./request-detail.html?id=${request.id}">View Details</a></td>
-        `;
+    const link = /** @type {HTMLAnchorElement | null} */ (
+      row.querySelector('[data-field="link"]')
+    );
+    if (link) {
+      link.href = `./request-detail.html?id=${encodeURIComponent(request.id)}`;
+    }
 
-    table.appendChild(row);
+    tableBody.appendChild(row);
   });
 }
 
-if (table && form && filterInput && pageRole) {
+if (tableBody && form && filterInput && pageRole) {
   const currentUser = requireAuth(pageRole);
 
   if (currentUser) {
-    let requests = [];
+    let requests = /** @type {ServiceRequest[]} */ ([]);
     if (pageRole === "client")
-      requests = Storage.getRequestsForClient(currentUser.id);
+      requests = storage.getRequestsForClient(currentUser.id);
     else if (pageRole === "engineer")
-      requests = Storage.getRequestsForEngineer(currentUser.id);
-    else if (pageRole === "admin") requests = Storage.getRequests();
+      requests = storage.getRequestsForEngineer(currentUser.id);
+    else if (pageRole === "admin") requests = storage.getRequests();
 
     renderTable(requests);
 
@@ -202,7 +305,11 @@ if (table && form && filterInput && pageRole) {
   }
 }
 
-const addRequestForm = document.getElementById("add-request-form");
+// --- Add request (add-request.html) --------------------------------------
+
+const addRequestForm = /** @type {HTMLFormElement | null} */ (
+  document.getElementById("add-request-form")
+);
 
 if (addRequestForm) {
   const currentUser = requireAuth("client");
@@ -211,9 +318,15 @@ if (addRequestForm) {
     addRequestForm.addEventListener("submit", function (event) {
       event.preventDefault();
 
-      Storage.addRequest({
+      // Read by id, not addRequestForm.title: every HTMLElement already
+      // has its own title IDL attribute, which shadows the child input named "title".
+      const titleInput = /** @type {HTMLInputElement} */ (
+        document.getElementById("title")
+      );
+
+      storage.addRequest({
         client_id: currentUser.id,
-        title: addRequestForm.title.value,
+        title: titleInput.value,
         description: addRequestForm.description.value,
         priority: addRequestForm.priority.value,
       });
@@ -223,6 +336,8 @@ if (addRequestForm) {
   }
 }
 
+// --- Request detail (request-detail.html) --------------------------------
+
 const requestInfo = document.getElementById("request-info");
 
 if (requestInfo) {
@@ -230,21 +345,27 @@ if (requestInfo) {
 
   if (currentUser) {
     const homeLink = document.getElementById("homeLink");
-    if (homeLink) homeLink.href = ROLE_HOME[currentUser.role];
+    if (homeLink instanceof HTMLAnchorElement) {
+      homeLink.href = ROLE_HOME[currentUser.role];
+    }
 
     const params = new URLSearchParams(window.location.search);
-    const requestId = params.get("id");
+    const requestId = /** @type {string} */ (params.get("id"));
     const statusHistoryList = document.getElementById("status-history");
     const statusControls = document.getElementById("status-controls");
     const commentsList = document.getElementById("comments-list");
-    const addCommentForm = document.getElementById("add-comment-form");
+    const addCommentForm = /** @type {HTMLFormElement | null} */ (
+      document.getElementById("add-comment-form")
+    );
     const internalCommentLabel = document.getElementById(
       "internal-comment-label",
     );
     const assignmentSection = document.getElementById("assignment-section");
-    const assignEngineerForm = document.getElementById("assign-engineer-form");
-    const assignEngineerSelect = document.getElementById(
-      "assign-engineer-select",
+    const assignEngineerForm = /** @type {HTMLFormElement | null} */ (
+      document.getElementById("assign-engineer-form")
+    );
+    const assignEngineerSelect = /** @type {HTMLSelectElement | null} */ (
+      document.getElementById("assign-engineer-select")
     );
 
     if (internalCommentLabel && currentUser.role === "client") {
@@ -253,27 +374,30 @@ if (requestInfo) {
 
     if (assignmentSection) {
       if (currentUser.role === "admin") {
-        Storage.getEngineers().forEach((engineer) => {
+        storage.getEngineers().forEach((engineer) => {
           const option = document.createElement("option");
           option.value = engineer.id;
           option.textContent = engineer.name;
-          assignEngineerSelect.appendChild(option);
+          assignEngineerSelect?.appendChild(option);
         });
       } else {
         assignmentSection.style.display = "none";
       }
     }
 
+    /** @returns {void} */
     function renderComments() {
+      if (!commentsList || !currentUser) return;
       commentsList.innerHTML = "";
       const includeInternal = currentUser.role !== "client";
-      const comments = Storage.getCommentsForRequest(requestId, {
+      const comments = storage.getCommentsForRequest(requestId, {
         includeInternal,
       });
 
       comments.forEach((comment) => {
-        const author = Storage.getUserById(comment.user_id);
+        const author = storage.getUserById(comment.user_id);
         const li = document.createElement("li");
+        // textContent (not innerHTML): no escaping needed, safe by construction.
         li.textContent = `${author ? author.name : "Unknown"}${
           comment.is_internal ? " (internal)" : ""
         }: ${comment.content} - ${comment.created_at}`;
@@ -281,72 +405,95 @@ if (requestInfo) {
       });
     }
 
+    /** @returns {void} */
     function renderRequest() {
-      const request = Storage.getRequestById(requestId);
+      if (!currentUser) return;
+      const request = storage.getRequestById(requestId);
 
       if (!request) {
-        requestInfo.innerHTML = "<p>Request not found.</p>";
-        statusHistoryList.innerHTML = "";
-        statusControls.innerHTML = "";
-        commentsList.innerHTML = "";
+        if (requestInfo) requestInfo.innerHTML = "<p>Request not found.</p>";
+        if (statusHistoryList) statusHistoryList.innerHTML = "";
+        if (statusControls) statusControls.innerHTML = "";
+        if (commentsList) commentsList.innerHTML = "";
         return;
       }
 
-      document.getElementById("request-title").textContent = request.title;
-      document.getElementById("request-description").textContent =
-        request.description;
-      document.getElementById("request-priority").textContent =
-        request.priority;
-      document.getElementById("request-status").textContent = request.status;
-      document.getElementById("request-created").textContent =
-        request.created_at;
+      /** @type {(id: string, text: string) => void} */
+      const setText = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+      };
 
-      const assignment = Storage.getAssignmentForRequest(request.id);
+      setText("request-title", request.title);
+      setText("request-description", request.description);
+      setText("request-priority", request.priority);
+      setText("request-status", request.status);
+      setText("request-created", request.created_at);
+
+      const assignment = storage.getAssignmentForRequest(request.id);
       const assignedEngineer = assignment
-        ? Storage.getUserById(assignment.engineer_id)
+        ? storage.getUserById(assignment.engineer_id)
         : null;
-      document.getElementById("request-assigned-engineer").textContent =
-        assignedEngineer ? assignedEngineer.name : "Unassigned";
+      setText(
+        "request-assigned-engineer",
+        assignedEngineer ? assignedEngineer.name : "Unassigned",
+      );
       if (assignEngineerSelect) {
         assignEngineerSelect.value = assignment ? assignment.engineer_id : "";
       }
 
-      statusHistoryList.innerHTML = "";
-      (request.status_history || []).forEach((entry) => {
-        const li = document.createElement("li");
-        li.textContent = `${entry.status} - ${entry.at}`;
-        statusHistoryList.appendChild(li);
-      });
-
-      statusControls.innerHTML = "";
-      if (currentUser.role !== "client") {
-        const nextStatuses = ALL_STATUSES.filter((status) =>
-          Storage.canTransition(request.status, status),
-        );
-
-        nextStatuses.forEach((status) => {
-          const button = document.createElement("button");
-          button.type = "button";
-          button.textContent = `Move to ${status}`;
-          button.addEventListener("click", function () {
-            Storage.updateRequestStatus(request.id, status);
-            renderRequest();
-          });
-          statusControls.appendChild(button);
+      if (statusHistoryList) {
+        statusHistoryList.innerHTML = "";
+        (request.status_history || []).forEach((entry) => {
+          const li = document.createElement("li");
+          li.textContent = `${entry.status} - ${entry.at}`;
+          statusHistoryList.appendChild(li);
         });
+      }
+
+      if (statusControls) {
+        statusControls.innerHTML = "";
+        if (currentUser.role !== "client") {
+          const nextStatuses = ALL_STATUSES.filter((status) =>
+            storage.canTransition(request.status, status),
+          );
+
+          nextStatuses.forEach((status) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.textContent = `Move to ${status}`;
+            button.dataset.status = status;
+            statusControls.appendChild(button);
+          });
+        }
       }
 
       renderComments();
     }
 
+    // Event delegation: the status buttons above are recreated on every render, so a single listener on their stable parent avoids re-attaching one listener per button on every status change.
+    if (statusControls) {
+      statusControls.addEventListener("click", function (event) {
+        const button = /** @type {HTMLElement} */ (event.target).closest(
+          "button[data-status]",
+        );
+        if (!button || !(button instanceof HTMLElement)) return;
+
+        const status = /** @type {RequestStatus} */ (button.dataset.status);
+        storage.updateRequestStatus(requestId, status);
+        renderRequest();
+      });
+    }
+
     if (assignEngineerForm && currentUser.role === "admin") {
       assignEngineerForm.addEventListener("submit", function (event) {
         event.preventDefault();
+        if (!assignEngineerSelect) return;
 
         const engineerId = assignEngineerSelect.value;
         if (!engineerId) return;
 
-        Storage.assignRequest({
+        storage.assignRequest({
           request_id: requestId,
           engineer_id: engineerId,
         });
@@ -364,7 +511,7 @@ if (requestInfo) {
         const isInternal =
           currentUser.role !== "client" && addCommentForm.is_internal.checked;
 
-        Storage.addComment({
+        storage.addComment({
           request_id: requestId,
           user_id: currentUser.id,
           content,
@@ -380,6 +527,8 @@ if (requestInfo) {
   }
 }
 
+// --- User detail (detail-users.html) --------------------------------------
+
 const userProfile = document.querySelector(".user-profile");
 
 if (userProfile) {
@@ -387,29 +536,48 @@ if (userProfile) {
 
   if (currentUser) {
     const homeLink = document.getElementById("homeLink");
-    if (homeLink) homeLink.href = ROLE_HOME[currentUser.role];
+    if (homeLink instanceof HTMLAnchorElement) {
+      homeLink.href = ROLE_HOME[currentUser.role];
+    }
 
     const params = new URLSearchParams(window.location.search);
-    const userId = params.get("id");
+    const userId = /** @type {string} */ (params.get("id"));
 
     const requestsSection = document.getElementById("user-requests-section");
     const requestsList = document.getElementById("user-requests-list");
     const adminSection = document.getElementById("user-admin-actions");
-    const editUserForm = document.getElementById("edit-user-form");
+    const editUserForm = /** @type {HTMLFormElement | null} */ (
+      document.getElementById("edit-user-form")
+    );
     const deleteUserButton = document.getElementById("delete-user-button");
+    const userRequestRowTemplate = /** @type {HTMLTemplateElement | null} */ (
+      document.getElementById("user-request-row-template")
+    );
+    // Read/write these fields by id, not editUserForm.name/.role
+    const editUserNameInput = /** @type {HTMLInputElement | null} */ (
+      document.getElementById("edit-user-name")
+    );
+    const editUserRoleSelect = /** @type {HTMLSelectElement | null} */ (
+      document.getElementById("edit-user-role")
+    );
 
     if (currentUser.role !== "admin" && adminSection) {
       adminSection.remove();
     }
 
+    /**
+     * @param {User} user
+     * @returns {void}
+     */
     function renderUserRequests(user) {
+      if (!requestsList || !requestsSection || !userRequestRowTemplate) return;
       requestsList.innerHTML = "";
 
-      let requests = [];
+      let requests = /** @type {ServiceRequest[]} */ ([]);
       if (user.role === "client")
-        requests = Storage.getRequestsForClient(user.id);
+        requests = storage.getRequestsForClient(user.id);
       else if (user.role === "engineer")
-        requests = Storage.getRequestsForEngineer(user.id);
+        requests = storage.getRequestsForEngineer(user.id);
 
       if (!requests.length) {
         requestsSection.style.display = "none";
@@ -418,44 +586,58 @@ if (userProfile) {
 
       requestsSection.style.display = "";
       requests.forEach((request) => {
-        const row = document.createElement("ul");
+        const row = cloneTemplate(userRequestRowTemplate, {
+          title: request.title,
+          description: request.description,
+          priority: request.priority,
+          status: request.status,
+        });
 
-        row.innerHTML = `
-          <li>Title : ${request.title}</li>
-          <li>Description : ${request.description}</li>
-          <li>Priority : ${request.priority}</li>
-          <li>Status : ${request.status}</li>
-          <li><a href="./request-detail.html?id=${request.id}">View details</a></li>
-        `;
+        const link = /** @type {HTMLAnchorElement | null} */ (
+          row.querySelector('[data-field="link"]')
+        );
+        if (link) {
+          link.href = `./request-detail.html?id=${encodeURIComponent(request.id)}`;
+        }
 
         requestsList.appendChild(row);
       });
     }
 
+    /** @returns {void} */
     function renderUser() {
-      const user = Storage.getUserById(userId);
+      if (!currentUser) return;
+      const user = storage.getUserById(userId);
 
       if (!user) {
-        document.querySelector(".user-profile").innerHTML =
-          "<p>User not found.</p>";
+        if (userProfile) userProfile.innerHTML = "<p>User not found.</p>";
         if (adminSection) adminSection.remove();
         return;
       }
 
-      document.getElementById("id-user").textContent = user.id;
-      document.getElementById("name-user").textContent = user.name;
-      document.getElementById("email-user").textContent = user.email;
-      document.getElementById("role-user").textContent = user.role;
-      document.getElementById("account-user").textContent = user.is_active
-        ? "Active"
-        : "Inactive";
+      /** @type {(id: string, text: string) => void} */
+      const setText = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+      };
+
+      setText("id-user", user.id);
+      setText("name-user", user.name);
+      setText("email-user", user.email);
+      setText("role-user", user.role);
+      setText("account-user", user.is_active ? "Active" : "Inactive");
 
       renderUserRequests(user);
 
-      if (editUserForm && currentUser.role === "admin") {
-        editUserForm.name.value = user.name;
+      if (
+        editUserForm &&
+        currentUser.role === "admin" &&
+        editUserNameInput &&
+        editUserRoleSelect
+      ) {
+        editUserNameInput.value = user.name;
         editUserForm.email.value = user.email;
-        editUserForm.role.value = user.role;
+        editUserRoleSelect.value = user.role;
         editUserForm.is_active.checked = user.is_active;
       }
     }
@@ -463,11 +645,12 @@ if (userProfile) {
     if (editUserForm) {
       editUserForm.addEventListener("submit", function (event) {
         event.preventDefault();
+        if (!editUserNameInput || !editUserRoleSelect) return;
 
-        Storage.updateUser(userId, {
-          name: editUserForm.name.value,
+        storage.updateUser(userId, {
+          name: editUserNameInput.value,
           email: editUserForm.email.value,
-          role: editUserForm.role.value,
+          role: /** @type {UserRole} */ (editUserRoleSelect.value),
           is_active: editUserForm.is_active.checked,
         });
 
@@ -482,7 +665,7 @@ if (userProfile) {
           return;
         }
 
-        Storage.deleteUser(userId);
+        storage.deleteUser(userId);
         window.location.href = "./client-list.html";
       });
     }
