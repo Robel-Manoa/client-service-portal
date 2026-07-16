@@ -1,36 +1,42 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="../styles/styles.css" />
-    <title>Client Service Portal</title>
-  </head>
-  <body data-role="engineer">
-    <nav>
-      <ul>
-        <li><a href="./index-engineer.html">Home</a></li>
-        <li><a href="./client-list.html">Client List</a></li>
-        <li><a href="./request-detail.html">Requests details</a></li>
-        <li><button type="button" id="logoutButton">Log out</button></li>
-      </ul>
-    </nav>
 
-    <div class="body-content">
-      <h2>Request List</h2>
-      <form action="" method="get" id="filterForm">
-        <label for="filter">Filter by status</label>
-        <select id="filterInput" name="filter">
-          <option value="all">All</option>
-          <option value="Open">Open</option>
-          <option value="In_Progress">In Progress</option>
-          <option value="Closed">Closed</option>
-        </select>
-        <button type="submit">Go</button>
-      </form>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <title>Client Service Portal</title>
+  <script src="../data/data.js" defer></script>
+  <script src="../script/storage.js" defer></script>
+  <script src="../script/app.js" defer></script>
+</head>
 
-      <div class="table-wrapper">
-        <table border="1">
+<body data-role="engineer">
+  <nav>
+    <ul>
+      <li><a href="./index-engineer.html">Home</a></li>
+      <li><a href="./client-list.html">Client List</a></li>
+      <li><a href="./request-detail.html">Requests details</a></li>
+      <li><button type="button" id="logoutButton">Log out</button></li>
+    </ul>
+  </nav>
+
+  <main class="body-content">
+    <h2>Request List</h2>
+    <form action="" method="get" id="filterForm">
+      <label for="filterInput">Filter by status</label>
+      <select id="filterInput" name="filter">
+        <option value="all">All</option>
+        <option value="Open">Open</option>
+        <option value="In_Progress">In Progress</option>
+        <option value="Closed">Closed</option>
+      </select>
+      <button type="submit">Go</button>
+    </form>
+
+    <div class="table-wrapper">
+      <table border="1">
+        <thead>
           <tr>
             <th>Title</th>
             <th>Priority</th>
@@ -38,12 +44,21 @@
             <th>Creation Date</th>
             <th>Details</th>
           </tr>
-        </table>
-      </div>
+        </thead>
+        <tbody id="requests-table-body"></tbody>
+      </table>
     </div>
 
-    <script src="../data/data.js"></script>
-    <script src="../script/storage.js"></script>
-    <script src="../script/app.js"></script>
-  </body>
+    <template id="request-row-template">
+      <tr>
+        <td data-field="title"></td>
+        <td data-field="priority"></td>
+        <td data-field="status"></td>
+        <td data-field="created_at"></td>
+        <td><a data-field="link">View Details</a></td>
+      </tr>
+    </template>
+  </main>
+</body>
+
 </html>
