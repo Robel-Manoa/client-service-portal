@@ -69,10 +69,9 @@ const CSP = () => {
 
   /**
    * Reads and parses a JSON value from sessionStorage.
-   * Design for failure: a manually edited or corrupted sessionStorage entry
-   * must not crash the page — it is treated as absent instead.
+   * Design for failure: a manually edited or corrupted sessionStorage entry must not crash the page — it is treated as absent instead.
    * @param {string} key
-   * @returns {*} the parsed value, or `null` if missing/unreadable
+   * @returns {*} the parsed value, or null if missing/unreadable
    */
   function read(key) {
     const raw = sessionStorage.getItem(key);
@@ -98,10 +97,9 @@ const CSP = () => {
 
   /**
    * Generates a pseudo-unique id for a new record.
-   * Uses `slice` rather than the deprecated `String.prototype.substr`
-   * (see MDN: substr is a legacy feature, kept only for compatibility).
+   * Uses slice rather than the deprecated String.prototype.substr
    * @param {string} prefix
-   * @returns {string} e.g. "request_ab12c34d5"
+   * @returns {string} 
    */
   function uid(prefix) {
     return `${prefix}_${Math.random().toString(36).slice(2, 11)}`;
@@ -109,16 +107,16 @@ const CSP = () => {
 
   /**
    * Seeds sessionStorage from the mock data (data/data.js) on first load
-   * only, guarded by the `csp_seeded` flag so demo data isn't re-injected
+   * only, guarded by the csp_seeded flag so demo data isn't re-injected
    * on every page navigation. Called once, right after Storage is created.
    * @returns {void}
    */
   function init() {
     if (sessionStorage.getItem(keys.seeded) === "true") return;
 
-    // `data` comes from the globally-loaded data/data.js script; falling
+    // data comes from the globally-loaded data/data.js script; falling
     // back to empty arrays keeps the app usable even if that file is
-    // missing (graceful degradation instead of a hard crash).
+    // missing
     const seed =
       typeof data !== "undefined"
         ? data
@@ -470,7 +468,6 @@ const CSP = () => {
 };
 
 // Named `storage` (lowercase), not `Storage`, to avoid colliding with the
-// DOM's built-in global `Storage` interface (see MDN: Storage — the type
-// behind window.localStorage / window.sessionStorage).
+// DOM's built-in global `Storage` interface
 const storage = CSP();
 storage.init();

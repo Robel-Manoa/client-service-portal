@@ -305,7 +305,7 @@ The data layer is the single source of truth for all data. Every page (`app.js`)
 
 **Assignments**
 
-- `getAssignments()`: Returns every engineer/request assignment.
+- `getAssignments()`: Returns every engineer/request assignment.   
 - `getAssignmentForRequest(requestId)`: Returns the assignment tied to a given request, if any.
 - `assignRequest({ request_id, engineer_id })`: Creates the assignment for a request, or updates it if one already exists (a request can only have one active engineer at a time).
 
