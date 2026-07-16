@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="../styles/styles.css" />
     <title>Client service portal</title>
+    <script src="../data/data.js" defer></script>
+    <script src="../script/storage.js" defer></script>
+    <script src="../script/app.js" defer></script>
   </head>
   <body data-role="client">
     <nav>
@@ -15,7 +18,7 @@
       </ul>
     </nav>
 
-    <div class="body-content">
+    <main class="body-content">
       <h2>Add new request</h2>
       <form action="" method="post" id="add-request-form">
         <label for="title">Title</label>
@@ -26,7 +29,8 @@
           required
           placeholder="Enter request title"
         />
-        <select name="priority" required>
+        <label for="priority">Priority</label>
+        <select name="priority" id="priority" required>
           <option value="">Select priority</option>
           <option value="low">Low</option>
           <option value="medium">Medium</option>
@@ -40,10 +44,6 @@
         ></textarea>
         <button type="submit">Submit</button>
       </form>
-    </div>
-
-    <script src="../data/data.js"></script>
-    <script src="../script/storage.js"></script>
-    <script src="../script/app.js"></script>
+    </main>
   </body>
 </html>

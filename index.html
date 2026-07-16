@@ -5,9 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="./styles/styles.css" />
     <title>Client Service Portal</title>
+    <script src="./data/data.js" defer></script>
+    <script src="./script/storage.js" defer></script>
+    <script src="./script/app.js" defer></script>
   </head>
   <body>
-    <div class="body-content">
+    <main class="body-content">
       <div class="login-content">
         <div class="app-desc">
           <h2>Client Service Portal</h2>
@@ -23,12 +26,14 @@
           </p>
         </div>
         <form action="" id="loginForm">
+          <label class="visually-hidden" for="email">Email</label>
           <input
             type="email"
             name="email"
             id="email"
             placeholder="Enter your email"
           />
+          <label class="visually-hidden" for="password">Password</label>
           <input
             type="password"
             name="password"
@@ -39,9 +44,6 @@
           <div class="error-message"></div>
         </form>
       </div>
-    </div>
-    <script src="./data/data.js"></script>
-    <script src="./script/storage.js"></script>
-    <script src="./script/app.js"></script>
+    </main>
   </body>
 </html>

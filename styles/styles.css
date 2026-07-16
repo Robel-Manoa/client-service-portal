@@ -13,6 +13,22 @@
   --color: #fff;
   --background-color: #000000;
   --primary-color: #ff3535;
+  --role-client-color: green;
+  --role-engineer-color: blue;
+  --role-admin-color: red;
+}
+
+/* Visually hides an element while keeping it readable to screen readers — used for form labels kept out of the visual design */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Login part : Start */
@@ -304,6 +320,29 @@ nav ul li button:hover {
   cursor: pointer;
 }
 
+/* Role badge — BEM block/element/modifier (see script/app.js userList()) */
+.role-badge {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 5px;
+  width: 60px;
+  color: #fff;
+  text-align: center;
+  border-radius: 10px;
+}
+
+.role-badge--client {
+  background-color: var(--role-client-color);
+}
+
+.role-badge--engineer {
+  background-color: var(--role-engineer-color);
+}
+
+.role-badge--admin {
+  background-color: var(--role-admin-color);
+}
+
 .body-content #admin-actions {
   display: none;
   position: absolute;
@@ -339,7 +378,7 @@ nav ul li button:hover {
   border: 1px solid var(--primary-color);
   background-color: transparent;
   color: var(--background-color);
-  transition: ease-out;
+  transition: all 0.3s ease-out;
   float: right;
 }
 
@@ -414,7 +453,7 @@ nav ul li button:hover {
   margin-top: 10px;
   margin-bottom: 10px;
   padding: 5px;
-  transition: ease-out;
+  transition: all 0.3s ease-out;
 }
 
 .body-content .user-profile #edit-btn:hover,

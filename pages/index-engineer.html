@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="../styles/styles.css" />
     <title>Client Service Portal</title>
+    <script src="../data/data.js" defer></script>
+    <script src="../script/storage.js" defer></script>
+    <script src="../script/app.js" defer></script>
   </head>
   <body data-role="engineer">
     <nav>
@@ -16,10 +19,10 @@
       </ul>
     </nav>
 
-    <div class="body-content">
+    <main class="body-content">
       <h2>Request List</h2>
       <form action="" method="get" id="filterForm">
-        <label for="filter">Filter by status</label>
+        <label for="filterInput">Filter by status</label>
         <select id="filterInput" name="filter">
           <option value="all">All</option>
           <option value="Open">Open</option>
@@ -31,19 +34,28 @@
 
       <div class="table-wrapper">
         <table border="1">
-          <tr>
-            <th>Title</th>
-            <th>Priority</th>
-            <th>Status</th>
-            <th>Creation Date</th>
-            <th>Details</th>
-          </tr>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>Creation Date</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody id="requests-table-body"></tbody>
         </table>
       </div>
-    </div>
 
-    <script src="../data/data.js"></script>
-    <script src="../script/storage.js"></script>
-    <script src="../script/app.js"></script>
+      <template id="request-row-template">
+        <tr>
+          <td data-field="title"></td>
+          <td data-field="priority"></td>
+          <td data-field="status"></td>
+          <td data-field="created_at"></td>
+          <td><a data-field="link">View Details</a></td>
+        </tr>
+      </template>
+    </main>
   </body>
 </html>

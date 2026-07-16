@@ -4,7 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="../styles/styles.css" />
-    <title>Client Servir Portal</title>
+    <title>Client Service Portal</title>
+    <script src="../data/data.js" defer></script>
+    <script src="../script/storage.js" defer></script>
+    <script src="../script/app.js" defer></script>
   </head>
   <body>
     <nav>
@@ -15,7 +18,7 @@
       </ul>
     </nav>
 
-    <div class="body-content">
+    <main class="body-content">
       <div class="user-profile">
         <h2>Personnal info</h2>
         <ul>
@@ -30,6 +33,15 @@
         <div id="user-requests-section">
           <h2>Request list</h2>
           <div id="user-requests-list"></div>
+          <template id="user-request-row-template">
+            <ul>
+              <li>Title : <span data-field="title"></span></li>
+              <li>Description : <span data-field="description"></span></li>
+              <li>Priority : <span data-field="priority"></span></li>
+              <li>Status : <span data-field="status"></span></li>
+              <li><a data-field="link">View details</a></li>
+            </ul>
+          </template>
         </div>
       </div>
 
@@ -55,10 +67,6 @@
         </form>
       </div>
       <button type="button" id="delete-user-button">Delete user</button>
-    </div>
-
-    <script src="../data/data.js"></script>
-    <script src="../script/storage.js"></script>
-    <script src="../script/app.js"></script>
+    </main>
   </body>
 </html>
