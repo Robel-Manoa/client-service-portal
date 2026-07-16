@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="../styles/styles.css" />
     <title>Client Service Portal</title>
+    <script src="../data/data.js" defer></script>
+    <script src="../script/storage.js" defer></script>
+    <script src="../script/app.js" defer></script>
   </head>
   <body>
     <nav>
@@ -15,15 +18,25 @@
       </ul>
     </nav>
 
-    <div class="body-content">
+    <main class="body-content">
       <h2>
         All Users <button onclick="showForm()" id="add-btn">Add user</button>
       </h2>
       <div id="clients-list"></div>
 
+      <template id="user-row-template">
+        <ul>
+          <li data-field="name"></li>
+          <li data-field="email"></li>
+          <li class="role-badge" data-field="role"></li>
+          <li><a data-field="link">View details</a></li>
+        </ul>
+      </template>
+
       <div id="admin-actions">
         <h2>Add user</h2>
         <form action="" method="post" id="add-user-form">
+          <label class="visually-hidden" for="add-user-name">Name</label>
           <input
             type="text"
             name="name"
@@ -32,6 +45,7 @@
             placeholder="Enter the name"
           />
 
+          <label class="visually-hidden" for="add-user-email">Email</label>
           <input
             type="email"
             name="email"
@@ -40,6 +54,9 @@
             placeholder="Enter the email adress"
           />
 
+          <label class="visually-hidden" for="add-user-password"
+            >Password</label
+          >
           <input
             type="password"
             name="password"
@@ -60,10 +77,6 @@
           <button onclick="removeForm()" id="cancel-btn">Cancel</button>
         </form>
       </div>
-    </div>
-
-    <script src="../data/data.js"></script>
-    <script src="../script/storage.js"></script>
-    <script src="../script/app.js"></script>
+    </main>
   </body>
 </html>
