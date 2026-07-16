@@ -1,3 +1,17 @@
+// @ts-check
+
+/**
+ * Seed data for the Client Service Portal, consumed once by storage.init()
+ * (see script/storage.js) to populate sessionStorage on first load. It is
+ * not read again afterwards — every subsequent read/write goes through
+ * sessionStorage instead, so editing this file only changes what a fresh
+ * demo session starts with.
+ *
+ * Dates use ISO 8601 throughout, matching what
+ * new Date() reliably parses across browsers
+ *
+ * @type {{ users: User[], requests: ServiceRequest[], assignments: Assignment[], comments: RequestComment[] }}
+ */
 const data = {
   users: [
     {
@@ -39,40 +53,40 @@ const data = {
       description: "New page for company",
       priority: "medium",
       status: "open",
-      created_at: "01-01-2023",
-      updated_at: "01-01-2023",
+      created_at: "2023-01-01",
+      updated_at: "2023-01-01",
       status_history: [
-        { status: "open", at: "01-01-2023" },
-        { status: "in_progress", at: "02-01-2023" },
+        { status: "open", at: "2023-01-01" },
+        { status: "in_progress", at: "2023-01-02" },
       ],
     },
     {
       id: "r2",
-      client_id: "u2",
+      client_id: "u1",
       title: "New balance sheet",
       description: "New page for company",
       priority: "medium",
       status: "in_progress",
-      created_at: "01-01-2023",
-      updated_at: "01-01-2023",
-      satus_history: [
-        { status: "open", at: "01-01-2023" },
-        { status: "in_progress", at: "02-01-2023" },
+      created_at: "2023-01-01",
+      updated_at: "2023-01-01",
+      status_history: [
+        { status: "open", at: "2023-01-01" },
+        { status: "in_progress", at: "2023-01-02" },
       ],
     },
   ],
-  assignements: [
+  assignments: [
     {
       id: "a1",
       request_id: "r1",
       engineer_id: "u2",
-      assigned_at: "01-01-2023",
+      assigned_at: "2023-01-01",
     },
     {
       id: "a2",
       request_id: "r2",
       engineer_id: "u2",
-      assigned_at: "01-01-2023",
+      assigned_at: "2023-01-01",
     },
   ],
   comments: [
@@ -82,7 +96,7 @@ const data = {
       user_id: "u1",
       content: "Please start working on this request",
       is_internal: false,
-      created_at: "01-01-2023",
+      created_at: "2023-01-01",
     },
     {
       id: "c2",
@@ -90,7 +104,7 @@ const data = {
       user_id: "u2",
       content: "I'm on it!",
       is_internal: false,
-      created_at: "01-01-2023",
+      created_at: "2023-01-01",
     },
   ],
 };
