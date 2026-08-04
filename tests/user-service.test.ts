@@ -1,12 +1,12 @@
-// Test de la logique métier dans user service (UserService, backé par Postgres)
+// Tests for the business logic in user.service (UserService, backed by Postgres)
 //
-// Chaque test tourne dans sa propre transaction SQL : BEGIN avant, ROLLBACK
-// après (systématique, même en cas d'échec) — rien n'est jamais persisté sur
-// le disque. Le ROLLBACK annule tout ce qui a été fait sur UNE connexion
-// précise : c'est pour ça que `client` (issu de dbPool.connect(), une seule
-// connexion dédiée) est passé explicitement à UserService à chaque appel,
-// plutôt que de laisser UserService utiliser dbPool directement (qui pioche
-// une connexion différente à chaque requête, ce qui casserait l'isolation).
+// Each test runs inside its own SQL transaction: BEGIN before, ROLLBACK
+// after (always, even on failure) — nothing is ever persisted to disk. The
+// ROLLBACK undoes everything done on ONE specific connection: that's why
+// `client` (from dbPool.connect(), a single dedicated connection) is passed
+// explicitly to UserService on every call, instead of letting UserService
+// use dbPool directly (which grabs a different connection per query, which
+// would break the isolation).
 
 import { test, beforeEach, afterEach, after } from "node:test";
 import assert from "node:assert/strict";
@@ -31,7 +31,7 @@ after(async () => {
   await dbPool.end();
 });
 
-test("création d'un utilisateur", async () => {
+test("creates a user", async () => {
   const newUser = await UserService.create(
     {
       id: generateId(),
@@ -48,7 +48,7 @@ test("création d'un utilisateur", async () => {
   assert.equal(newUser.role, "client");
 });
 
-test("recherche d'un utilisateur par email", async () => {
+test("finds a user by email", async () => {
   await UserService.create(
     {
       id: generateId(),
@@ -61,11 +61,11 @@ test("recherche d'un utilisateur par email", async () => {
 
   const foundUser = await UserService.findByEmail("robelmanoa@gmail.com", client);
 
-  assert.ok(foundUser, "l'utilisateur créé juste avant doit être retrouvé");
+  assert.ok(foundUser, "the user created above should be found");
   assert.equal(foundUser?.name, "Robel manoa");
 });
 
-test("un email en double est rejeté avec un statusCode 409", async () => {
+test("a duplicate email is rejected with statusCode 409", async () => {
   await UserService.create(
     {
       id: generateId(),
@@ -94,13 +94,13 @@ test("un email en double est rejeté avec un statusCode 409", async () => {
   );
 });
 
-test("le ROLLBACK ne laisse aucune trace : l'email du test précédent est réutilisable", async () => {
-  // Si le ROLLBACK d'un des tests précédents n'avait pas fonctionné,
-  // cette création échouerait avec une violation de contrainte UNIQUE (409).
+test("ROLLBACK leaves no trace: the previous test's email can be reused", async () => {
+  // If the ROLLBACK from a previous test hadn't worked, this creation would
+  // fail with a UNIQUE constraint violation (409).
   const user = await UserService.create(
     {
       id: generateId(),
-      name: "Vérification isolation",
+      name: "Isolation check",
       email: "robelmanoa@gmail.com",
       passwordHash: "$2b$10$abcdef1234567890",
     },

@@ -4,9 +4,9 @@ import type { Server } from "node:http";
 import app from "../src/app";
 import { SEED_IDS } from "../src/core/database";
 
-// Ces tests couvrent le flux d'authentification/autorisation qui a été cassé
-// silencieusement une première fois (ordre authentificate/requireRole inversé) :
-// login -> token -> route protégée, plus les cas 401/403/ownership.
+// These tests cover the authentication/authorization flow that broke
+// silently once before (authenticate/requireRole ran in the wrong order):
+// login -> token -> protected route, plus the 401/403/ownership cases.
 
 let server: Server;
 let baseUrl: string;
@@ -33,23 +33,23 @@ async function login(email: string, password: string) {
   return { status: res.status, body: await res.json() };
 }
 
-test("GET /health répond 200 sans authentification", async () => {
+test("GET /health returns 200 without authentication", async () => {
   const res = await fetch(`${baseUrl}/health`);
   assert.equal(res.status, 200);
 });
 
-test("GET /api/users sans token est rejeté (401)", async () => {
+test("GET /api/users without a token is rejected (401)", async () => {
   const res = await fetch(`${baseUrl}/api/users`);
   assert.equal(res.status, 401);
 });
 
-test("login admin puis GET /api/users réussit — vérifie que authentificate s'exécute bien avant requireRole", async () => {
+test("logging in as admin then GET /api/users succeeds — confirms authenticate runs before requireRole", async () => {
   const { status, body: loginBody } = await login(
     "admin@portal.local",
     "password123",
   );
   assert.equal(status, 200);
-  assert.ok(loginBody.token, "un token JWT doit être renvoyé");
+  assert.ok(loginBody.token, "a JWT token should be returned");
 
   const res = await fetch(`${baseUrl}/api/users`, {
     headers: { Authorization: `Bearer ${loginBody.token}` },
@@ -57,7 +57,7 @@ test("login admin puis GET /api/users réussit — vérifie que authentificate s
   assert.equal(res.status, 200);
 });
 
-test("login client puis GET /api/users est refusé (403 : rôle insuffisant)", async () => {
+test("logging in as a client then GET /api/users is denied (403: insufficient role)", async () => {
   const { body: loginBody } = await login("manoa@gmail.com", "password123");
 
   const res = await fetch(`${baseUrl}/api/users`, {
@@ -66,7 +66,7 @@ test("login client puis GET /api/users est refusé (403 : rôle insuffisant)", a
   assert.equal(res.status, 403);
 });
 
-test("login engineer puis GET /api/users est refusé (403 : GET /users est admin-only)", async () => {
+test("logging in as an engineer then GET /api/users is denied (403: GET /users is admin-only)", async () => {
   const { body: loginBody } = await login("robel@gmail.com", "password123");
 
   const res = await fetch(`${baseUrl}/api/users`, {
@@ -75,7 +75,7 @@ test("login engineer puis GET /api/users est refusé (403 : GET /users est admin
   assert.equal(res.status, 403);
 });
 
-test("PATCH /api/users/:id est admin-only : un client ne peut pas modifier son propre profil (403)", async () => {
+test("PATCH /api/users/:id is admin-only: a client cannot update their own profile (403)", async () => {
   const { body: loginBody } = await login("manoa@gmail.com", "password123");
 
   const res = await fetch(`${baseUrl}/api/users/${SEED_IDS.client1}`, {
@@ -89,7 +89,7 @@ test("PATCH /api/users/:id est admin-only : un client ne peut pas modifier son p
   assert.equal(res.status, 403);
 });
 
-test("un admin peut modifier n'importe quel utilisateur via PATCH /api/users/:id", async () => {
+test("an admin can update any user via PATCH /api/users/:id", async () => {
   const { body: loginBody } = await login("admin@portal.local", "password123");
 
   const res = await fetch(`${baseUrl}/api/users/${SEED_IDS.client2}`, {
@@ -98,15 +98,15 @@ test("un admin peut modifier n'importe quel utilisateur via PATCH /api/users/:id
       "Content-Type": "application/json",
       Authorization: `Bearer ${loginBody.token}`,
     },
-    body: JSON.stringify({ name: "Fy (modifié)" }),
+    body: JSON.stringify({ name: "Fy (updated)" }),
   });
   const body = await res.json();
 
   assert.equal(res.status, 200);
-  assert.equal(body.name, "Fy (modifié)");
+  assert.equal(body.name, "Fy (updated)");
 });
 
-test("un admin ne peut pas créer un utilisateur avec un email déjà utilisé (409)", async () => {
+test("an admin cannot create a user with an email that's already in use (409)", async () => {
   const { body: loginBody } = await login("admin@portal.local", "password123");
 
   const res = await fetch(`${baseUrl}/api/users`, {
@@ -116,15 +116,15 @@ test("un admin ne peut pas créer un utilisateur avec un email déjà utilisé (
       Authorization: `Bearer ${loginBody.token}`,
     },
     body: JSON.stringify({
-      name: "Doublon",
-      email: "manoa@gmail.com", // déjà pris par SEED_IDS.client1
+      name: "Duplicate",
+      email: "manoa@gmail.com", // already taken by SEED_IDS.client1
       password: "azertyui",
     }),
   });
   assert.equal(res.status, 409);
 });
 
-test("un admin ne peut pas changer l'email d'un utilisateur vers un email déjà pris par un autre (409)", async () => {
+test("an admin cannot change a user's email to one already taken by someone else (409)", async () => {
   const { body: loginBody } = await login("admin@portal.local", "password123");
 
   const res = await fetch(`${baseUrl}/api/users/${SEED_IDS.client2}`, {
@@ -133,22 +133,22 @@ test("un admin ne peut pas changer l'email d'un utilisateur vers un email déjà
       "Content-Type": "application/json",
       Authorization: `Bearer ${loginBody.token}`,
     },
-    body: JSON.stringify({ email: "manoa@gmail.com" }), // déjà pris par SEED_IDS.client1
+    body: JSON.stringify({ email: "manoa@gmail.com" }), // already taken by SEED_IDS.client1
   });
   assert.equal(res.status, 409);
 });
 
-test("les dates sont renvoyées au format DD-MM-YYYY HH:mm, aussi bien pour les données de seed que fraîchement créées", async () => {
+test("dates are returned in DD-MM-YYYY HH:mm format, for both seed data and freshly created records", async () => {
   const DATE_FORMAT = /^\d{2}-\d{2}-\d{4} \d{2}:\d{2}$/;
   const { body: loginBody } = await login("admin@portal.local", "password123");
 
-  // Donnée de seed (stockée en interne comme simple "2023-04-25", sans heure)
+  // Seed data (stored internally as plain "2023-04-25", no time)
   const seedUser = await fetch(`${baseUrl}/api/users/${SEED_IDS.client1}`, {
     headers: { Authorization: `Bearer ${loginBody.token}` },
   }).then((r) => r.json());
   assert.match(seedUser.created_at, DATE_FORMAT);
 
-  // Donnée fraîchement créée (stockée en interne en ISO avec heure)
+  // Freshly created data (stored internally as ISO with time)
   const created = await fetch(`${baseUrl}/api/users`, {
     method: "POST",
     headers: {
@@ -156,7 +156,7 @@ test("les dates sont renvoyées au format DD-MM-YYYY HH:mm, aussi bien pour les 
       Authorization: `Bearer ${loginBody.token}`,
     },
     body: JSON.stringify({
-      name: "Test Format Date",
+      name: "Date Format Test",
       email: "test-format-date@example.com",
       password: "azertyui",
     }),
@@ -164,7 +164,7 @@ test("les dates sont renvoyées au format DD-MM-YYYY HH:mm, aussi bien pour les 
   assert.match(created.created_at, DATE_FORMAT);
 });
 
-test("un client ne voit que ses propres demandes sur GET /api/requests", async () => {
+test("a client only sees their own requests on GET /api/requests", async () => {
   const { body: loginBody } = await login("manoa@gmail.com", "password123");
 
   const res = await fetch(`${baseUrl}/api/requests`, {
@@ -175,6 +175,6 @@ test("un client ne voit que ses propres demandes sur GET /api/requests", async (
   assert.equal(res.status, 200);
   assert.ok(
     requests.every((r: { client_id: string }) => r.client_id === SEED_IDS.client1),
-    "un client ne doit voir que les demandes dont il est le propriétaire",
+    "a client should only see requests they own",
   );
 });

@@ -1,8 +1,8 @@
-// Formatage des dates exposées par l'API. Les dates restent stockées en ISO
-// 8601 en interne (tri chronologique fiable, pas d'ambiguïté) ; ce formatage
-// n'intervient qu'à la sortie, juste avant de renvoyer une réponse JSON.
-// UTC est utilisé (pas l'heure locale du serveur) pour que le format ne
-// dépende pas d'où le serveur est déployé.
+// Formats dates for API responses. Dates are still stored as ISO 8601
+// internally (reliable chronological sorting, no ambiguity); this formatting
+// only happens on the way out, right before the JSON response is sent.
+// UTC is used instead of the server's local time so the output doesn't
+// depend on where the server happens to be deployed.
 export function formatDate(iso: string, withTime = true): string {
   const date = new Date(iso);
 

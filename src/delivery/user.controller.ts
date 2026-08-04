@@ -1,56 +1,56 @@
 import { Request, Response } from "express";
 import { UserService, EMAIL_TAKEN_MESSAGE } from "../core/user.service";
 
-// Connexion d'un utilisateur
+// User login
 export const loginUser = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   try {
     const result = await UserService.login(email, password);
-    // si donnée invalide
+    // invalid credentials
     if (!result) {
-      res.status(401).json({ error: "Donnée invalide" });
+      res.status(401).json({ error: "Invalid credentials" });
       return;
     }
 
     res.status(200).json(result);
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Connexion refusée";
+      error instanceof Error ? error.message : "Login failed";
     res.status(403).json({ error: message });
   }
 };
 
-// Récupération de tous les utilisateurs
+// Fetch all users
 
 export const getAllUser = async (req: Request, res: Response) => {
   const users = await UserService.getAll();
   res.status(200).json(users);
 };
 
-// Récupération des utilisations par ID
+// Fetch a user by ID
 
 export const getUserById = async (req: Request, res: Response) => {
   const id = req.params.id as string;
   const user = await UserService.getById(id);
 
   if (!user) {
-    res.status(404).json({ error: "Utilisateur introuvable" });
+    res.status(404).json({ error: "User not found" });
     return;
   }
 
   res.status(200).json(user);
 };
 
-// Création d'utilisateur avec les services de création
+// Create a user via the user service
 
 export const createUser = async (req: Request, res: Response) => {
   const { name, email, password, role, is_active } = req.body;
 
-  // Les utilisateurs créer sont des clients par defaut
+  // Newly created users default to the client role
   const assignedRole = role || "client";
 
-  // Délegation de la tache de création au service
+  // Delegate the creation to the service layer
   try {
     const newUser = await UserService.create({
       name,
@@ -70,8 +70,8 @@ export const createUser = async (req: Request, res: Response) => {
   }
 };
 
-// Mise à jour d'un utilisateur (PATCH /api/users/:id, réservé aux admins —
-// voir requireRole("admin") en amont, aucun self-service).
+// Update a user (PATCH /api/users/:id, admin-only — see requireRole("admin")
+// upstream, no self-service).
 
 export const updateUser = async (req: Request, res: Response) => {
   const id = req.params.id as string;
@@ -87,7 +87,7 @@ export const updateUser = async (req: Request, res: Response) => {
     });
 
     if (!updatedUser) {
-      res.status(404).json({ error: "Utilisateur introuvable" });
+      res.status(404).json({ error: "User not found" });
       return;
     }
 
@@ -101,14 +101,14 @@ export const updateUser = async (req: Request, res: Response) => {
   }
 };
 
-// Suppréssion d'un utilisateurs avec les services
+// Delete a user via the user service
 
 export const deleteUser = async (req: Request, res: Response) => {
   const id = req.params.id as string;
   const isDeleted = await UserService.delete(id);
 
   if (!isDeleted) {
-    res.status(404).json({ error: "Utilisateur introuvable" });
+    res.status(404).json({ error: "User not found" });
     return;
   }
 

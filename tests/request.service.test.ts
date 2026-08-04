@@ -1,9 +1,10 @@
-// Test de la logique métier dans request.service (RequestService, backé par Postgres)
+// Tests for the business logic in request.service (RequestService, backed by Postgres)
 //
-// Chaque test tourne dans sa propre transaction SQL (BEGIN avant, ROLLBACK après, systématique)
-// sur une seule connexion dédiée (`client`), passée explicitement à RequestService ET à
-// UserService (pour créer les utilisateurs prérequis — client_id est une
-// clé étrangère NOT NULL vers users). Rien n'est jamais persisté sur le disque.
+// Each test runs inside its own SQL transaction (BEGIN before, ROLLBACK
+// after, always) on a single dedicated connection (`client`), passed
+// explicitly to both RequestService and UserService (to create the
+// prerequisite users — client_id is a NOT NULL foreign key to users).
+// Nothing is ever persisted to disk.
 
 import { test, beforeEach, afterEach, after } from "node:test";
 import assert from "node:assert/strict";
@@ -29,8 +30,8 @@ after(async () => {
   await dbPool.end();
 });
 
-// Crée un utilisateur (client ou engineer) prérequis pour les demandes,
-// via UserService plutôt que du SQL brut — même connexion transactionnelle.
+// Creates a user (client or engineer) as a prerequisite for requests, via
+// UserService rather than raw SQL — same transactional connection.
 async function createTestUser(role: "client" | "engineer" = "client") {
   return UserService.create(
     {
@@ -44,21 +45,21 @@ async function createTestUser(role: "client" | "engineer" = "client") {
   );
 }
 
-test("create() crée une demande et renvoie les infos du client via la jointure", async () => {
+test("create() creates a request and returns client info via the join", async () => {
   const testClient = await createTestUser("client");
 
   const request = await RequestService.create(
     {
       id: generateId(),
-      title: "Bug sur le formulaire de connexion",
-      description: "Le bouton ne réagit plus après un clic",
+      title: "Login form bug",
+      description: "The button stops responding after a click",
       priority: "high",
       client_id: testClient.id,
     },
     client,
   );
 
-  assert.equal(request.title, "Bug sur le formulaire de connexion");
+  assert.equal(request.title, "Login form bug");
   assert.equal(request.status, "open");
   assert.equal(request.client_id, testClient.id);
   assert.equal(request.client_name, testClient.name);
@@ -66,13 +67,13 @@ test("create() crée une demande et renvoie les infos du client via la jointure"
   assert.equal(request.engineer_name, null);
 });
 
-test("findAll() renvoie toutes les demandes", async () => {
+test("findAll() returns every request", async () => {
   const testClient = await createTestUser("client");
 
   await RequestService.create(
     {
       id: generateId(),
-      title: "Demande 1",
+      title: "Request 1",
       description: "Description 1",
       priority: "low",
       client_id: testClient.id,
@@ -82,7 +83,7 @@ test("findAll() renvoie toutes les demandes", async () => {
   await RequestService.create(
     {
       id: generateId(),
-      title: "Demande 2",
+      title: "Request 2",
       description: "Description 2",
       priority: "medium",
       client_id: testClient.id,
@@ -95,14 +96,14 @@ test("findAll() renvoie toutes les demandes", async () => {
   assert.equal(results.length, 2);
 });
 
-test("findAll() filtre par client_id", async () => {
+test("findAll() filters by client_id", async () => {
   const clientA = await createTestUser("client");
   const clientB = await createTestUser("client");
 
   await RequestService.create(
     {
       id: generateId(),
-      title: "Demande de A",
+      title: "Request from A",
       description: "Description A",
       priority: "low",
       client_id: clientA.id,
@@ -112,7 +113,7 @@ test("findAll() filtre par client_id", async () => {
   await RequestService.create(
     {
       id: generateId(),
-      title: "Demande de B",
+      title: "Request from B",
       description: "Description B",
       priority: "low",
       client_id: clientB.id,
@@ -129,14 +130,14 @@ test("findAll() filtre par client_id", async () => {
   assert.equal(results[0].client_id, clientA.id);
 });
 
-test("findAll() filtre par engineer assigné", async () => {
+test("findAll() filters by assigned engineer", async () => {
   const testClient = await createTestUser("client");
   const engineer = await createTestUser("engineer");
 
   const assigned = await RequestService.create(
     {
       id: generateId(),
-      title: "Demande assignée",
+      title: "Assigned request",
       description: "Description",
       priority: "low",
       client_id: testClient.id,
@@ -152,7 +153,7 @@ test("findAll() filtre par engineer assigné", async () => {
   await RequestService.create(
     {
       id: generateId(),
-      title: "Demande non assignée",
+      title: "Unassigned request",
       description: "Description",
       priority: "low",
       client_id: testClient.id,
@@ -170,12 +171,12 @@ test("findAll() filtre par engineer assigné", async () => {
   assert.equal(results[0].engineer_name, engineer.name);
 });
 
-test("findById() renvoie une demande existante", async () => {
+test("findById() returns an existing request", async () => {
   const testClient = await createTestUser("client");
   const created = await RequestService.create(
     {
       id: generateId(),
-      title: "Demande à retrouver",
+      title: "Request to find",
       description: "Description",
       priority: "low",
       client_id: testClient.id,
@@ -187,20 +188,20 @@ test("findById() renvoie une demande existante", async () => {
 
   assert.ok(found);
   assert.equal(found?.id, created.id);
-  assert.equal(found?.title, "Demande à retrouver");
+  assert.equal(found?.title, "Request to find");
 });
 
-test("findById() renvoie null pour une demande inexistante", async () => {
+test("findById() returns null for a request that doesn't exist", async () => {
   const found = await RequestService.findById(generateId(), client);
   assert.equal(found, null);
 });
 
-test("update() modifie le statut d'une demande", async () => {
+test("update() changes a request's status", async () => {
   const testClient = await createTestUser("client");
   const created = await RequestService.create(
     {
       id: generateId(),
-      title: "Demande à résoudre",
+      title: "Request to resolve",
       description: "Description",
       priority: "low",
       client_id: testClient.id,
@@ -217,12 +218,12 @@ test("update() modifie le statut d'une demande", async () => {
   assert.equal(updated?.status, "resolved");
 });
 
-test("update() sans changement renvoie la demande telle quelle (chemin findById)", async () => {
+test("update() with no changes returns the request as-is (findById path)", async () => {
   const testClient = await createTestUser("client");
   const created = await RequestService.create(
     {
       id: generateId(),
-      title: "Demande inchangée",
+      title: "Unchanged request",
       description: "Description",
       priority: "low",
       client_id: testClient.id,
@@ -237,12 +238,12 @@ test("update() sans changement renvoie la demande telle quelle (chemin findById)
   assert.equal(result?.status, created.status);
 });
 
-test("le ROLLBACK ne laisse aucune trace entre les tests", async () => {
-  // Si l'un des ROLLBACK précédents avait échoué, cette liste ne serait pas vide.
+test("ROLLBACK leaves no trace between tests", async () => {
+  // If any earlier ROLLBACK had failed, this list wouldn't be empty.
   const results = await RequestService.findAll(undefined, client);
   assert.equal(
     results.length,
     0,
-    "aucune demande ne doit survivre d'un test à l'autre",
+    "no request should survive from one test to the next",
   );
 });

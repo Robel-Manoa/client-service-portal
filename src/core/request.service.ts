@@ -4,8 +4,8 @@ import { generateId } from "./id.util";
 import { formatDate } from "./date.util";
 
 export class RequestService {
-  // Formate les dates pour l'API (DD-MM-YYYY HH:mm) sans toucher au stockage
-  // interne, qui reste en ISO 8601 (tri chronologique fiable).
+  // Formats dates for the API (DD-MM-YYYY HH:mm) without touching internal
+  // storage, which stays in ISO 8601 (reliable chronological sorting).
   private static formatRequest(request: ServiceRequest): ServiceRequest {
     return {
       ...request,
@@ -18,32 +18,32 @@ export class RequestService {
     };
   }
 
-  // Récupération de toutes les demandes
+  // Fetch every request
   static async getAll(): Promise<ServiceRequest[]> {
     return serviceRequestDb.map(this.formatRequest);
   }
 
-  // Récupération des demandes d'un client précis (un client ne voit que les siennes)
+  // Fetch the requests belonging to a given client (a client only sees their own)
   static async getAllForClient(clientId: string): Promise<ServiceRequest[]> {
     return serviceRequestDb
       .filter((r) => r.client_id === clientId)
       .map(this.formatRequest);
   }
 
-  // Récupération des demandes assignées à un engineer précis
+  // Fetch the requests assigned to a given engineer
   static async getAllForEngineer(engineerId: string): Promise<ServiceRequest[]> {
     return serviceRequestDb
       .filter((r) => r.assigned_engineer_id === engineerId)
       .map(this.formatRequest);
   }
 
-  // Récupérer une demande par ID
+  // Fetch a single request by ID
   static async getById(id: string): Promise<ServiceRequest | null> {
     const request = serviceRequestDb.find((r) => r.id === id);
     return request ? this.formatRequest(request) : null;
   }
 
-  // Création d'une demande
+  // Create a request
   static async create(data: {
     client_id: string;
     title: string;
@@ -68,10 +68,10 @@ export class RequestService {
     return this.formatRequest(newRequest);
   }
 
-  // Mise à jour du contenu d'une demande (titre/description/priorité).
-  // Le statut ne passe plus par ici : voir updateStatus, séparé pour que les
-  // règles de transition (qui a le droit de passer de quel statut à quel
-  // autre) restent isolées de la simple édition de contenu.
+  // Update a request's content (title/description/priority).
+  // Status changes no longer go through here: see updateStatus, kept
+  // separate so transition rules (who's allowed to move from which status
+  // to which other) stay isolated from plain content edits.
   static async update(
     id: string,
     updates: {
@@ -95,10 +95,10 @@ export class RequestService {
     return this.formatRequest(requestUpdate);
   }
 
-  // Changement de statut d'une demande, avec historisation.
-  // La validation de la transition (qui a le droit de faire quel changement)
-  // est de la responsabilité de l'appelant (controller) : le service applique
-  // seulement le changement demandé.
+  // Change a request's status, with history tracking.
+  // Validating the transition (who's allowed to make which change) is the
+  // caller's responsibility (controller) — the service just applies the
+  // requested change.
   static async updateStatus(
     id: string,
     status: RequestStatus,
@@ -116,7 +116,7 @@ export class RequestService {
     return this.formatRequest(request);
   }
 
-  // Assigne un engineer à une demande
+  // Assign an engineer to a request
   static async assignEngineer(
     id: string,
     engineerId: string,
@@ -130,7 +130,7 @@ export class RequestService {
     return this.formatRequest(request);
   }
 
-  // Supprimer une demande
+  // Delete a request
   static async delete(id: string): Promise<boolean> {
     const index = serviceRequestDb.findIndex((r) => r.id === id);
     if (index === -1) return false;

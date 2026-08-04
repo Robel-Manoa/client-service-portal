@@ -4,20 +4,20 @@ import cors from "cors";
 import { rateLimit } from "express-rate-limit";
 import { env } from "./config/env.config";
 
-// documentation de l'app
+// API documentation
 import swaggerUi from "swagger-ui-express";
 import { generateOpenAPIDocument } from "./config/docs.config";
 
-// Import de la partie de connexion
+// Auth route imports
 import { loginSchema } from "./delivery/schemas/auth.schema";
 
-// Import des middlewares d'authentification et d'autorisation
+// Authentication/authorization middleware imports
 import {
-  authentificate,
+  authenticate,
   requireRole,
 } from "./delivery/middlewares/auth.middleware";
 
-//import des controlleurs pour le service demande
+// Request controller imports
 import {
   getAllRequests,
   getRequestById,
@@ -30,7 +30,7 @@ import {
   deleteRequest,
 } from "./delivery/request.controller";
 
-// Import pour les controlleurs utilisateurs
+// User controller imports
 import {
   loginUser,
   createUser,
@@ -40,8 +40,8 @@ import {
   deleteUser,
 } from "./delivery/user.controller";
 
-// Import pour la validation et du middleware
-import { valides } from "./delivery/middlewares/validate.middleware";
+// Validation middleware and schema imports
+import { validate } from "./delivery/middlewares/validate.middleware";
 import {
   createUserSchema,
   updateUserSchema,
@@ -54,54 +54,54 @@ import {
 } from "./delivery/schemas/request.schema";
 import { createCommentSchema } from "./delivery/schemas/comment.schema";
 
-// Initialisation du projet avec express
+// App setup
 
 const app = express();
 
-// Mise en place de la sécurité du serveur
-// Activation de Helmet
+// Server security
+// Enable Helmet
 app.use(helmet());
 
-// Configuration du cors
+// CORS configuration
 app.use(
   cors({
     origin:
       env.NODE_ENV === "development"
-        ? "*" // Tout autoriser en développement locale
+        ? "*" // Allow everything in local development
         : `https://${env.URL_SITE}`,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   }),
 );
 
-// Limitation des requêtes Par IP
+// Per-IP rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 100,
   standardHeaders: "draft-8",
   legacyHeaders: false,
-  message: { error: "Trop de requêtes. Veuillez réessayer plus tard" },
+  message: { error: "Too many requests. Please try again later" },
 });
 
 app.use(limiter);
 
-// Middleware de base
-// Permission au serveur de comprendre le format JSON dans les requêtes entrantes
+// Base middleware
+// Lets the server parse JSON request bodies
 app.use(express.json());
 
-// Documentation OpenAPI / swagger
+// OpenAPI / Swagger documentation
 const openApiDocument = generateOpenAPIDocument();
 
-// ROUTES PUBLIQUE
-// Route pour consulter la documentation
+// PUBLIC ROUTES
+// Route to serve the raw OpenAPI document
 app.get("/api-docs.json", (req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.send(openApiDocument);
 });
 
-// Interface interactive
+// Interactive docs UI
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
-// Vérification des routes, et l'état de santé du serveur
+// Route to check server health
 
 app.get("/health", (req: Request, res: Response) => {
   res.status(200).json({
@@ -111,115 +111,115 @@ app.get("/health", (req: Request, res: Response) => {
   });
 });
 
-// Route de connexion
-app.post("/api/auth/login", valides(loginSchema), loginUser);
+// Login route
+app.post("/api/auth/login", validate(loginSchema), loginUser);
 
-// ROUTES PROTEGEES
-// authentificate doit TOUJOURS précéder requireRole : c'est authentificate qui
-// pose req.user à partir du token, requireRole ne fait que le relire.
+// PROTECTED ROUTES
+// authenticate must ALWAYS run before requireRole: authenticate is what sets
+// req.user from the token, requireRole only reads it back.
 
-// Route pour CRUD des demandes (request)
-// GET filtre par rôle au niveau du controller : client -> les siennes,
-// engineer -> celles qui lui sont assignées, admin -> toutes.
-app.get("/api/requests", authentificate, getAllRequests);
-app.get("/api/requests/:id", authentificate, getRequestById);
-// Création réservée aux clients : ce sont eux qui soumettent des demandes,
-// pas le staff.
+// Request CRUD routes
+// GET filters by role at the controller level: client -> their own,
+// engineer -> requests assigned to them, admin -> all of them.
+app.get("/api/requests", authenticate, getAllRequests);
+app.get("/api/requests/:id", authenticate, getRequestById);
+// Creation is client-only: they're the ones filing requests, not staff.
 app.post(
   "/api/requests",
-  authentificate,
+  authenticate,
   requireRole("client"),
-  valides(createRequestSchema),
+  validate(createRequestSchema),
   createRequest,
 );
-// Mise à jour du CONTENU (titre/description/priorité) : propriétaire ou staff,
-// vérifié dans le controller.
+// Update the CONTENT (title/description/priority): owner or staff,
+// checked in the controller.
 app.put(
   "/api/requests/:id",
-  authentificate,
-  valides(updateRequestSchema),
+  authenticate,
+  validate(updateRequestSchema),
   updateRequest,
 );
-// Changement de STATUT, avec règles de transition par rôle (voir controller) :
-// client jamais, engineer seulement open->resolved, admin toute transition.
+// Change the STATUS, with per-role transition rules (see controller):
+// never for clients, open->resolved only for engineers, any for admins.
 app.patch(
   "/api/requests/:id",
-  authentificate,
-  valides(updateRequestStatusSchema),
+  authenticate,
+  validate(updateRequestStatusSchema),
   updateRequestStatus,
 );
 app.delete(
   "/api/requests/:id",
-  authentificate,
+  authenticate,
   requireRole("admin"),
   deleteRequest,
 );
 
-// Assignation d'un engineer à une demande (réservé aux admins)
+// Assign an engineer to a request (admin-only)
 app.post(
   "/api/requests/:id/assignments",
-  authentificate,
+  authenticate,
   requireRole("admin"),
-  valides(assignEngineerSchema),
+  validate(assignEngineerSchema),
   assignEngineer,
 );
 
-// Commentaires sur une demande : accès ouvert à tout authentifié, filtrage
-// (propriétaire/visibilité) géré dans le controller.
-app.get("/api/requests/:id/comments", authentificate, getComments);
+// Comments on a request: open to any authenticated user, filtering
+// (ownership/visibility) is handled in the controller.
+app.get("/api/requests/:id/comments", authenticate, getComments);
 app.post(
   "/api/requests/:id/comments",
-  authentificate,
-  valides(createCommentSchema),
+  authenticate,
+  validate(createCommentSchema),
   createComment,
 );
 
-// Route pour CRUD des utilisateurs (User)
-// Réservé aux admins : l'annuaire complet des utilisateurs n'est pas
-// nécessaire aux engineers pour faire leur travail sur les demandes.
-app.get("/api/users", authentificate, requireRole("admin"), getAllUser);
+// User CRUD routes
+// Admin-only: engineers don't need the full user directory to do their job
+// on requests.
+app.get("/api/users", authenticate, requireRole("admin"), getAllUser);
 app.get(
   "/api/users/:id",
-  authentificate,
+  authenticate,
   requireRole("admin", "engineer"),
   getUserById,
 );
 app.post(
   "/api/users",
-  authentificate,
+  authenticate,
   requireRole("admin"),
-  valides(createUserSchema),
+  validate(createUserSchema),
   createUser,
 );
-// Réservé aux admins, y compris pour son propre profil : pas de self-service.
+// Admin-only, including for one's own profile: no self-service.
 app.patch(
   "/api/users/:id",
-  authentificate,
+  authenticate,
   requireRole("admin"),
-  valides(updateUserSchema),
+  validate(updateUserSchema),
   updateUser,
 );
-app.delete("/api/users/:id", authentificate, requireRole("admin"), deleteUser);
+app.delete("/api/users/:id", authenticate, requireRole("admin"), deleteUser);
 
-// Gestion des erreurs
-// La gestion des erreurs de routes, ce bloque gère proprement les routes innexistante que les utilisateurs essayeront d'y acceder
+// Error handling
+// Catch-all for routes that don't exist
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.status(404).json({
-    error: "Ressources non trouvée",
+    error: "Resource not found",
   });
 });
 
-// Global Error Handler
-// Middleware pour rebustesse. Si une erreur imprévue survient dans le code ce bloque l'attrape, évite que le serveur ne crashe et renvoie une erreure
+// Global error handler
+// Safety net: catches unexpected errors so the server doesn't crash, and
+// returns a generic error response instead.
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error("[Erreur Serveur]:", err.stack);
+  console.error("[Server Error]:", err.stack);
   res.status(500).json({
-    error: "Une erreur interne est survenue sur le serveur",
+    error: "An internal server error occurred",
   });
 });
 
-// app.listen() est fait dans server.ts, pas ici : ça permet aux tests
-// d'importer `app` sans ouvrir un vrai port.
+// app.listen() happens in server.ts, not here: this lets tests import
+// `app` without opening a real port.
 export default app;

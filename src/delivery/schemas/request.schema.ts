@@ -1,15 +1,15 @@
 import { z } from "zod";
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 
-// Permission à Zod pour openAPI
+// Lets Zod attach OpenAPI metadata
 extendZodWithOpenApi(z);
 
-// Seule source de vérité pour la liste des statuts valides — réutilisée
-// partout (payload, historique, schéma de transition) pour éviter que les
-// cinq valeurs divergent d'un endroit à l'autre.
+// Single source of truth for the list of valid statuses — reused everywhere
+// (payload, history, transition schema) so the five values can't drift
+// apart from one place to another.
 const REQUEST_STATUSES = ["open", "in_progress", "pending_client", "resolved", "closed"] as const;
 
-// Model de donnée du Request pour openAPI
+// Request data model (for OpenAPI)
 export const requestSchema = z.object({
   id: z.string().openapi({example: "8f14e45f-ceea-4c9c-8f1e-000000000001"}),
   client_id: z.string().openapi({example: "8f14e45f-ceea-4c9c-8f1e-000000000002"}),
@@ -17,8 +17,8 @@ export const requestSchema = z.object({
   description: z.string().openapi({example: "I need website to sell my own product"}),
   priority: z.enum(["low", "medium", "high"]).openapi({example: "low"}),
   status: z.enum(REQUEST_STATUSES).openapi({example: "open"}),
-  created_at: z.string().openapi({example: "01-01-2023 00:00", description: "Format DD-MM-YYYY HH:mm"}),
-  updated_at: z.string().openapi({example: "01-01-2023 00:00", description: "Format DD-MM-YYYY HH:mm"}),
+  created_at: z.string().openapi({example: "01-01-2023 00:00", description: "Format: DD-MM-YYYY HH:mm"}),
+  updated_at: z.string().openapi({example: "01-01-2023 00:00", description: "Format: DD-MM-YYYY HH:mm"}),
   status_history: z.array(
     z.object({
       status: z.enum(REQUEST_STATUSES),
@@ -28,43 +28,43 @@ export const requestSchema = z.object({
   assigned_engineer_id: z.string().optional().openapi({example: "8f14e45f-ceea-4c9c-8f1e-000000000003"}),
 }).openapi("ServiceRequest")
 
-// 1. Schéma pour la CRÉATION d'une demande (POST)
-// client_id n'est volontairement pas dans ce schéma : il est dérivé de
-// req.user (token JWT) dans le controller, jamais du corps de la requête,
-// pour empêcher un client de créer une demande au nom d'un autre.
+// 1. Schema for CREATING a request (POST)
+// client_id is deliberately left out of this schema: it's derived from
+// req.user (JWT token) in the controller, never from the request body, so a
+// client can't create a request on someone else's behalf.
 export const createRequestSchema = z.object({
   body: z.object({
-    title: z.string({ message: "Le titre est obligatoire." }).min(5, "Le titre doit contenir au moins 5 caractères."),
-    description: z.string({ message: "La description est obligatoire." }).min(10, "La description doit contenir au moins 10 caractères."),
+    title: z.string({ message: "Title is required." }).min(5, "Title must be at least 5 characters long."),
+    description: z.string({ message: "Description is required." }).min(10, "Description must be at least 10 characters long."),
     priority: z.enum(["low", "medium", "high"], {
-      message: "La priorité doit être : low, medium ou high.",
+      message: "Priority must be one of: low, medium, or high.",
     }),
   }),
 });
 
-// 2. Schéma pour la MISE À JOUR du contenu d'une demande (PUT) — titre/description/priorité
-// uniquement. Le statut a son propre schéma/endpoint (voir updateRequestStatusSchema),
-// car les règles de qui a le droit de faire quelle transition sont spécifiques.
+// 2. Schema for UPDATING a request's content (PUT) — title/description/priority
+// only. Status has its own schema/endpoint (see updateRequestStatusSchema),
+// since the rules around who can perform which transition are specific.
 export const updateRequestSchema = z.object({
   body: z.object({
-    title: z.string().min(5, "Le titre doit contenir au moins 5 caractères.").optional(),
-    description: z.string().min(10, "La description doit contenir au moins 10 caractères.").optional(),
+    title: z.string().min(5, "Title must be at least 5 characters long.").optional(),
+    description: z.string().min(10, "Description must be at least 10 characters long.").optional(),
     priority: z.enum(["low", "medium", "high"]).optional(),
   }),
 });
 
-// 3. Schéma pour le changement de statut d'une demande (PATCH /api/requests/:id)
+// 3. Schema for changing a request's status (PATCH /api/requests/:id)
 export const updateRequestStatusSchema = z.object({
   body: z.object({
     status: z.enum(REQUEST_STATUSES, {
-      message: "Le statut doit être : open, in_progress, pending_client, resolved ou closed.",
+      message: "Status must be one of: open, in_progress, pending_client, resolved, or closed.",
     }),
   }),
 });
 
-// 4. Schéma pour assigner un engineer à une demande (POST /api/requests/:id/assignments)
+// 4. Schema for assigning an engineer to a request (POST /api/requests/:id/assignments)
 export const assignEngineerSchema = z.object({
   body: z.object({
-    engineer_id: z.string({ message: "L'identifiant de l'engineer est obligatoire." }),
+    engineer_id: z.string({ message: "The engineer's ID is required." }),
   }),
 });

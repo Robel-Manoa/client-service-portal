@@ -4,10 +4,10 @@ import type { Server } from "node:http";
 import app from "../src/app";
 import { SEED_IDS } from "../src/core/database";
 
-// Couvre la matrice d'accès Client/Engineer/Admin sur les demandes :
-// création, transitions de statut, assignation d'engineer, commentaires.
-// Seed : SEED_IDS.request1 appartient à SEED_IDS.client1, assigné à
-// SEED_IDS.engineer, avec un commentaire public et un interne.
+// Covers the Client/Engineer/Admin access matrix on requests: creation,
+// status transitions, engineer assignment, comments.
+// Seed data: SEED_IDS.request1 belongs to SEED_IDS.client1, assigned to
+// SEED_IDS.engineer, with one public comment and one internal comment.
 
 let server: Server;
 let baseUrl: string;
@@ -50,17 +50,17 @@ function authed(token: string, init: RequestInit = {}) {
   };
 }
 
-// --- POST /api/requests : réservé aux clients ---
+// --- POST /api/requests: client-only ---
 
-test("POST /api/requests : un engineer ne peut pas créer de demande (403)", async () => {
+test("POST /api/requests: an engineer cannot create a request (403)", async () => {
   const token = await tokenFor("robel@gmail.com"); // SEED_IDS.engineer
   const res = await fetch(
     `${baseUrl}/api/requests`,
     authed(token, {
       method: "POST",
       body: JSON.stringify({
-        title: "Demande engineer",
-        description: "Ne devrait pas passer",
+        title: "Engineer request",
+        description: "Should not go through",
         priority: "low",
       }),
     }),
@@ -68,15 +68,15 @@ test("POST /api/requests : un engineer ne peut pas créer de demande (403)", asy
   assert.equal(res.status, 403);
 });
 
-test("POST /api/requests : un admin ne peut pas créer de demande (403)", async () => {
+test("POST /api/requests: an admin cannot create a request (403)", async () => {
   const token = await tokenFor("admin@portal.local");
   const res = await fetch(
     `${baseUrl}/api/requests`,
     authed(token, {
       method: "POST",
       body: JSON.stringify({
-        title: "Demande admin",
-        description: "Ne devrait pas passer",
+        title: "Admin request",
+        description: "Should not go through",
         priority: "low",
       }),
     }),
@@ -84,15 +84,15 @@ test("POST /api/requests : un admin ne peut pas créer de demande (403)", async 
   assert.equal(res.status, 403);
 });
 
-test("POST /api/requests : un client peut créer une demande (201)", async () => {
+test("POST /api/requests: a client can create a request (201)", async () => {
   const token = await tokenFor("manoa@gmail.com");
   const res = await fetch(
     `${baseUrl}/api/requests`,
     authed(token, {
       method: "POST",
       body: JSON.stringify({
-        title: "Nouvelle demande de test",
-        description: "Description suffisamment longue pour passer Zod",
+        title: "New test request",
+        description: "Description long enough to pass Zod validation",
         priority: "medium",
       }),
     }),
@@ -103,10 +103,10 @@ test("POST /api/requests : un client peut créer une demande (201)", async () =>
   assert.equal(body.status, "open");
 });
 
-// --- GET /api/requests : filtrage par rôle ---
+// --- GET /api/requests: role-based filtering ---
 
-test("GET /api/requests : un engineer ne voit que les demandes qui lui sont assignées", async () => {
-  const token = await tokenFor("robel@gmail.com"); // assigné à SEED_IDS.request1 dans le seed
+test("GET /api/requests: an engineer only sees requests assigned to them", async () => {
+  const token = await tokenFor("robel@gmail.com"); // assigned to SEED_IDS.request1 in the seed data
   const res = await fetch(`${baseUrl}/api/requests`, authed(token));
   const requests: Array<{ id: string; assigned_engineer_id?: string }> =
     await res.json();
@@ -115,21 +115,21 @@ test("GET /api/requests : un engineer ne voit que les demandes qui lui sont assi
   assert.ok(requests.some((r) => r.id === SEED_IDS.request1));
   assert.ok(
     requests.every((r) => r.assigned_engineer_id === SEED_IDS.engineer),
-    "un engineer ne doit voir que les demandes qui lui sont assignées",
+    "an engineer should only see requests assigned to them",
   );
 });
 
-// --- PATCH /api/requests/:id : transitions de statut ---
+// --- PATCH /api/requests/:id: status transitions ---
 
-test("transitions de statut : un client ne peut jamais changer le statut (403)", async () => {
+test("status transitions: a client can never change the status (403)", async () => {
   const clientToken = await tokenFor("manoa@gmail.com");
   const created = await fetch(
     `${baseUrl}/api/requests`,
     authed(clientToken, {
       method: "POST",
       body: JSON.stringify({
-        title: "Demande pour test de statut",
-        description: "Description suffisamment longue pour Zod",
+        title: "Request for status test",
+        description: "Description long enough for Zod",
         priority: "low",
       }),
     }),
@@ -145,15 +145,15 @@ test("transitions de statut : un client ne peut jamais changer le statut (403)",
   assert.equal(res.status, 403);
 });
 
-test("transitions de statut : un engineer ne peut PAS faire open -> in_progress (403)", async () => {
+test("status transitions: an engineer CANNOT go from open -> in_progress (403)", async () => {
   const clientToken = await tokenFor("manoa@gmail.com");
   const created = await fetch(
     `${baseUrl}/api/requests`,
     authed(clientToken, {
       method: "POST",
       body: JSON.stringify({
-        title: "Demande pour test in_progress",
-        description: "Description suffisamment longue pour Zod",
+        title: "Request for in_progress test",
+        description: "Description long enough for Zod",
         priority: "low",
       }),
     }),
@@ -170,15 +170,15 @@ test("transitions de statut : un engineer ne peut PAS faire open -> in_progress 
   assert.equal(res.status, 403);
 });
 
-test("transitions de statut : un engineer PEUT faire open -> resolved (200)", async () => {
+test("status transitions: an engineer CAN go from open -> resolved (200)", async () => {
   const clientToken = await tokenFor("manoa@gmail.com");
   const created = await fetch(
     `${baseUrl}/api/requests`,
     authed(clientToken, {
       method: "POST",
       body: JSON.stringify({
-        title: "Demande pour test resolved",
-        description: "Description suffisamment longue pour Zod",
+        title: "Request for resolved test",
+        description: "Description long enough for Zod",
         priority: "low",
       }),
     }),
@@ -197,7 +197,7 @@ test("transitions de statut : un engineer PEUT faire open -> resolved (200)", as
   assert.equal(res.status, 200);
   assert.equal(body.status, "resolved");
 
-  // Un admin peut ensuite fermer la demande, transition que l'engineer n'a pas.
+  // An admin can then close the request, a transition the engineer doesn't have.
   const adminToken = await tokenFor("admin@portal.local");
   const closeRes = await fetch(
     `${baseUrl}/api/requests/${created.id}`,
@@ -212,9 +212,9 @@ test("transitions de statut : un engineer PEUT faire open -> resolved (200)", as
   assert.equal(closeBody.status, "closed");
 });
 
-// --- POST /api/requests/:id/assignments : admin only ---
+// --- POST /api/requests/:id/assignments: admin only ---
 
-test("assignation : un client ne peut pas assigner un engineer (403)", async () => {
+test("assignment: a client cannot assign an engineer (403)", async () => {
   const token = await tokenFor("manoa@gmail.com");
   const res = await fetch(
     `${baseUrl}/api/requests/${SEED_IDS.request1}/assignments`,
@@ -226,28 +226,28 @@ test("assignation : un client ne peut pas assigner un engineer (403)", async () 
   assert.equal(res.status, 403);
 });
 
-test("assignation : un admin ne peut pas assigner un utilisateur qui n'est pas engineer (400)", async () => {
+test("assignment: an admin cannot assign a user who isn't an engineer (400)", async () => {
   const token = await tokenFor("admin@portal.local");
   const res = await fetch(
     `${baseUrl}/api/requests/${SEED_IDS.request1}/assignments`,
     authed(token, {
       method: "POST",
-      // SEED_IDS.client1 est un client, pas un engineer
+      // SEED_IDS.client1 is a client, not an engineer
       body: JSON.stringify({ engineer_id: SEED_IDS.client1 }),
     }),
   );
   assert.equal(res.status, 400);
 });
 
-test("assignation : un admin peut assigner un engineer valide (201)", async () => {
+test("assignment: an admin can assign a valid engineer (201)", async () => {
   const clientToken = await tokenFor("manoa@gmail.com");
   const created = await fetch(
     `${baseUrl}/api/requests`,
     authed(clientToken, {
       method: "POST",
       body: JSON.stringify({
-        title: "Demande pour test assignation",
-        description: "Description suffisamment longue pour Zod",
+        title: "Request for assignment test",
+        description: "Description long enough for Zod",
         priority: "low",
       }),
     }),
@@ -267,10 +267,10 @@ test("assignation : un admin peut assigner un engineer valide (201)", async () =
   assert.equal(body.assigned_engineer_id, SEED_IDS.engineer);
 });
 
-// --- Commentaires : visibilité par rôle ---
+// --- Comments: role-based visibility ---
 
-test("commentaires : le client propriétaire ne voit que les commentaires publics", async () => {
-  const token = await tokenFor("manoa@gmail.com"); // propriétaire de SEED_IDS.request1
+test("comments: the owning client only sees public comments", async () => {
+  const token = await tokenFor("manoa@gmail.com"); // owns SEED_IDS.request1
   const res = await fetch(`${baseUrl}/api/requests/${SEED_IDS.request1}/comments`, authed(token));
   const comments: Array<{ visibility: string }> = await res.json();
 
@@ -279,13 +279,13 @@ test("commentaires : le client propriétaire ne voit que les commentaires public
   assert.ok(comments.every((c) => c.visibility === "public"));
 });
 
-test("commentaires : un client qui n'est pas propriétaire n'a pas accès (403)", async () => {
-  const token = await tokenFor("Fy@gmail.com"); // SEED_IDS.client2, ne possède pas SEED_IDS.request1
+test("comments: a client who doesn't own the request has no access (403)", async () => {
+  const token = await tokenFor("Fy@gmail.com"); // SEED_IDS.client2, doesn't own SEED_IDS.request1
   const res = await fetch(`${baseUrl}/api/requests/${SEED_IDS.request1}/comments`, authed(token));
   assert.equal(res.status, 403);
 });
 
-test("commentaires : le staff voit aussi les commentaires internes", async () => {
+test("comments: staff also see internal comments", async () => {
   const token = await tokenFor("admin@portal.local");
   const res = await fetch(`${baseUrl}/api/requests/${SEED_IDS.request1}/comments`, authed(token));
   const comments: Array<{ visibility: string }> = await res.json();
@@ -294,28 +294,28 @@ test("commentaires : le staff voit aussi les commentaires internes", async () =>
   assert.ok(comments.some((c) => c.visibility === "internal"));
 });
 
-test("commentaires : un client qui poste en 'internal' est forcé en 'public'", async () => {
+test("comments: a client posting as 'internal' is forced to 'public'", async () => {
   const token = await tokenFor("manoa@gmail.com");
   const res = await fetch(
     `${baseUrl}/api/requests/${SEED_IDS.request1}/comments`,
     authed(token, {
       method: "POST",
-      body: JSON.stringify({ body: "Commentaire client", visibility: "internal" }),
+      body: JSON.stringify({ body: "Client comment", visibility: "internal" }),
     }),
   );
   const body = await res.json();
 
   assert.equal(res.status, 201);
-  assert.equal(body.visibility, "public", "un client ne peut jamais poster en interne");
+  assert.equal(body.visibility, "public", "a client should never be able to post internally");
 });
 
-test("commentaires : un engineer peut poster un commentaire interne", async () => {
+test("comments: an engineer can post an internal comment", async () => {
   const token = await tokenFor("robel@gmail.com");
   const res = await fetch(
     `${baseUrl}/api/requests/${SEED_IDS.request1}/comments`,
     authed(token, {
       method: "POST",
-      body: JSON.stringify({ body: "Note interne engineer", visibility: "internal" }),
+      body: JSON.stringify({ body: "Engineer internal note", visibility: "internal" }),
     }),
   );
   const body = await res.json();

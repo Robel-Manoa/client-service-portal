@@ -1,7 +1,6 @@
-// Génération du document OpenAPI
-// C'est dans ce fichier que l'on trouvera les informations générales sur l'API
-// Les schéma de sécurité
-// Les path avec leurs méthodes HTTP
+// OpenAPI document generation
+// This file holds the general API info, security schemes, and paths with
+// their HTTP methods.
 
 import {
   OpenAPIRegistry,
@@ -26,28 +25,28 @@ import {
   createCommentSchema,
 } from "../delivery/schemas/comment.schema";
 
-// Paramètre de chemin ":id", réutilisé sur toutes les routes /xxx/:id
+// ":id" path parameter, reused across every /xxx/:id route
 const idParam = (example: string) =>
   z.object({ id: z.string().openapi({ example }) });
 
-// Création du registre OpenAPI
+// Create the OpenAPI registry
 export const registry = new OpenAPIRegistry();
 
-// Déclaration du système d'authentification
+// Declare the authentication scheme
 const bearerAuth = registry.registerComponent("securitySchemes", "BearerAuth", {
   type: "http",
   scheme: "bearer",
   bearerFormat: "JWT",
-  description: "Entrer le token JWT au format : Bearer <token>",
+  description: "Enter the JWT token as: Bearer <token>",
 });
 
-// Enregistrement des routes : Auth
+// Auth routes
 registry.registerPath({
   method: "post",
   path: "/api/auth/login",
-  summary: "Connexion utilisateur",
+  summary: "User login",
   description:
-    "Authentifie un utilisateur et retourne un token JWT valide pendant 2 heures",
+    "Authenticates a user and returns a JWT token valid for 2 hours",
   request: {
     body: {
       content: {
@@ -60,7 +59,7 @@ registry.registerPath({
 
   responses: {
     200: {
-      description: "Connexion réussie",
+      description: "Login successful",
       content: {
         "application/json": {
           schema: z.object({
@@ -70,55 +69,55 @@ registry.registerPath({
       },
     },
 
-    400: { description: "Donnée invalide" },
-    404: { description: "Indentifiant incorrecte" },
+    400: { description: "Invalid data" },
+    404: { description: "Incorrect credentials" },
   },
 });
 
-// Enregistrement des routes : Users
+// User routes
 registry.registerPath({
   method: "get",
   path: "/api/users",
-  summary: "Liste de tous les users",
-  description: "La liste de tous les utilisateurs, réservé aux admins",
-  // La route nécessite un token JWT
+  summary: "List all users",
+  description: "List of every user, admin-only",
+  // This route requires a JWT token
   security: [{ [bearerAuth.name]: [] }],
 
   responses: {
     200: {
-      description: "Utilisateurs récupérée avec succès",
+      description: "Users retrieved successfully",
       content: { "application/json": { schema: z.array(UserSchema) } },
     },
-    401: { description: "Non authentifier" },
-    403: { description: "Accès refusé" },
-    404: { description: "donnée introuvable" },
+    401: { description: "Not authenticated" },
+    403: { description: "Access denied" },
+    404: { description: "Data not found" },
   },
 });
 
 registry.registerPath({
   method: "get",
   path: "/api/users/{id}",
-  summary: "Récupération d'un utilisateur par ID",
-  description: "Réservé aux rôles admin et engineer",
+  summary: "Get a user by ID",
+  description: "Restricted to the admin and engineer roles",
   security: [{ [bearerAuth.name]: [] }],
   request: { params: idParam("8f14e45f-ceea-4c9c-8f1e-000000000001") },
   responses: {
     200: {
-      description: "Utilisateur récupéré avec succès",
+      description: "User retrieved successfully",
       content: { "application/json": { schema: UserSchema } },
     },
-    401: { description: "Non authentifier" },
-    403: { description: "Accès refusé" },
-    404: { description: "Utilisateur introuvable" },
+    401: { description: "Not authenticated" },
+    403: { description: "Access denied" },
+    404: { description: "User not found" },
   },
 });
 
 registry.registerPath({
   method: "post",
   path: "/api/users",
-  summary: "Création d'un utilisateur",
+  summary: "Create a user",
   description:
-    "Réservé aux admins. role/is_active sont optionnels : par défaut un compte créé est un client actif.",
+    "Admin-only. role/is_active are optional: a newly created account defaults to an active client.",
   security: [{ [bearerAuth.name]: [] }],
   request: {
     body: {
@@ -129,21 +128,21 @@ registry.registerPath({
   },
   responses: {
     201: {
-      description: "Utilisateur créé avec succès",
+      description: "User created successfully",
       content: { "application/json": { schema: UserSchema } },
     },
-    400: { description: "Donnée invalide" },
-    401: { description: "Non authentifier" },
-    403: { description: "Accès refusé" },
+    400: { description: "Invalid data" },
+    401: { description: "Not authenticated" },
+    403: { description: "Access denied" },
   },
 });
 
 registry.registerPath({
   method: "patch",
   path: "/api/users/{id}",
-  summary: "Mise à jour d'un utilisateur",
+  summary: "Update a user",
   description:
-    "Réservé aux admins, y compris pour son propre profil (pas de self-service).",
+    "Admin-only, including for one's own profile (no self-service).",
   security: [{ [bearerAuth.name]: [] }],
   request: {
     params: idParam("8f14e45f-ceea-4c9c-8f1e-000000000001"),
@@ -155,74 +154,74 @@ registry.registerPath({
   },
   responses: {
     200: {
-      description: "Utilisateur mis à jour avec succès",
+      description: "User updated successfully",
       content: { "application/json": { schema: UserSchema } },
     },
-    400: { description: "Donnée invalide" },
-    401: { description: "Non authentifier" },
-    403: { description: "Accès refusé" },
-    404: { description: "Utilisateur introuvable" },
+    400: { description: "Invalid data" },
+    401: { description: "Not authenticated" },
+    403: { description: "Access denied" },
+    404: { description: "User not found" },
   },
 });
 
 registry.registerPath({
   method: "delete",
   path: "/api/users/{id}",
-  summary: "Suppression d'un utilisateur",
-  description: "Réservé aux admins",
+  summary: "Delete a user",
+  description: "Admin-only",
   security: [{ [bearerAuth.name]: [] }],
   request: { params: idParam("8f14e45f-ceea-4c9c-8f1e-000000000001") },
   responses: {
-    204: { description: "Utilisateur supprimé avec succès" },
-    401: { description: "Non authentifier" },
-    403: { description: "Accès refusé" },
-    404: { description: "Utilisateur introuvable" },
+    204: { description: "User deleted successfully" },
+    401: { description: "Not authenticated" },
+    403: { description: "Access denied" },
+    404: { description: "User not found" },
   },
 });
 
-// Routes de récupération : Requests
+// Request read routes
 registry.registerPath({
   method: "get",
   path: "/api/requests",
-  summary: "Tous les demandes",
+  summary: "List all requests",
   description:
-    "Client : ses propres demandes. Engineer : les demandes qui lui sont assignées. Admin : toutes les demandes.",
+    "Client: their own requests. Engineer: requests assigned to them. Admin: every request.",
   security: [{ [bearerAuth.name]: [] }],
   responses: {
-    200: { description: "Liste de toutes les demandes" },
-    401: { description: "Utilisateur non authentifier" },
-    403: { description: "Accès refusé" },
-    404: { description: "Donnée introuvable" },
-    500: { description: "Problème de serveur" },
+    200: { description: "List of all requests" },
+    401: { description: "Not authenticated" },
+    403: { description: "Access denied" },
+    404: { description: "Data not found" },
+    500: { description: "Server error" },
   },
 });
 
-// Route de récupération d'une demande particulière : Request/id
+// Route to fetch a single request by ID
 registry.registerPath({
   method: "get",
   path: "/api/requests/{id}",
-  summary: "Récupération d'une demande par ID",
+  summary: "Get a request by ID",
   description:
-    "Un client ne peut voir que ses propres demandes. Le staff (admin/engineer) voit toutes les demandes.",
+    "A client can only see their own requests. Staff (admin/engineer) can see every request.",
   security: [{ [bearerAuth.name]: [] }],
   request: { params: idParam("8f14e45f-ceea-4c9c-8f1e-000000000010") },
   responses: {
     200: {
-      description: "Demande récupérée avec succès",
+      description: "Request retrieved successfully",
       content: { "application/json": { schema: requestSchema } },
     },
-    401: { description: "Utilisateur non authentifier" },
-    403: { description: "Accès refusé" },
-    404: { description: "Demande introuvable" },
+    401: { description: "Not authenticated" },
+    403: { description: "Access denied" },
+    404: { description: "Request not found" },
   },
 });
 
-// Routes pour publier : Requests
+// Request write routes
 registry.registerPath({
   method: "post",
   path: "/api/requests",
-  summary: "Création d'une nouvelle demande",
-  description: "Réservé aux clients (le staff ne soumet pas de demandes).",
+  summary: "Create a new request",
+  description: "Client-only (staff don't file requests).",
   security: [{ [bearerAuth.name]: [] }],
 
   request: {
@@ -235,20 +234,20 @@ registry.registerPath({
 
   responses: {
     201: {
-      description: "Demande créer avec succès",
+      description: "Request created successfully",
       content: { "application/json": { schema: requestSchema } },
     },
-    400: { description: "Erreur de validiter" },
-    403: { description: "Problème d'accès" },
+    400: { description: "Validation error" },
+    403: { description: "Access denied" },
   },
 });
 
 registry.registerPath({
   method: "put",
   path: "/api/requests/{id}",
-  summary: "Mise à jour du contenu d'une demande",
+  summary: "Update a request's content",
   description:
-    "Titre/description/priorité uniquement — le statut a son propre endpoint (PATCH). Accès : propriétaire (client) ou staff (admin/engineer).",
+    "Title/description/priority only — status has its own endpoint (PATCH). Access: owner (client) or staff (admin/engineer).",
   security: [{ [bearerAuth.name]: [] }],
   request: {
     params: idParam("8f14e45f-ceea-4c9c-8f1e-000000000010"),
@@ -260,22 +259,22 @@ registry.registerPath({
   },
   responses: {
     200: {
-      description: "Demande mise à jour avec succès",
+      description: "Request updated successfully",
       content: { "application/json": { schema: requestSchema } },
     },
-    400: { description: "Donnée invalide" },
-    401: { description: "Utilisateur non authentifier" },
-    403: { description: "Accès refusé" },
-    404: { description: "Demande introuvable" },
+    400: { description: "Invalid data" },
+    401: { description: "Not authenticated" },
+    403: { description: "Access denied" },
+    404: { description: "Request not found" },
   },
 });
 
 registry.registerPath({
   method: "patch",
   path: "/api/requests/{id}",
-  summary: "Changement de statut d'une demande",
+  summary: "Change a request's status",
   description:
-    "Client : jamais (403). Engineer : uniquement la transition open -> resolved. Admin : n'importe quelle transition, y compris vers closed.",
+    "Client: never (403). Engineer: only the open -> resolved transition. Admin: any transition, including to closed.",
   security: [{ [bearerAuth.name]: [] }],
   request: {
     params: idParam("8f14e45f-ceea-4c9c-8f1e-000000000010"),
@@ -287,37 +286,37 @@ registry.registerPath({
   },
   responses: {
     200: {
-      description: "Statut mis à jour avec succès",
+      description: "Status updated successfully",
       content: { "application/json": { schema: requestSchema } },
     },
-    400: { description: "Donnée invalide" },
-    401: { description: "Utilisateur non authentifier" },
-    403: { description: "Transition non autorisée pour ce rôle" },
-    404: { description: "Demande introuvable" },
+    400: { description: "Invalid data" },
+    401: { description: "Not authenticated" },
+    403: { description: "Transition not allowed for this role" },
+    404: { description: "Request not found" },
   },
 });
 
 registry.registerPath({
   method: "delete",
   path: "/api/requests/{id}",
-  summary: "Suppression d'une demande",
-  description: "Réservé aux admins",
+  summary: "Delete a request",
+  description: "Admin-only",
   security: [{ [bearerAuth.name]: [] }],
   request: { params: idParam("8f14e45f-ceea-4c9c-8f1e-000000000010") },
   responses: {
-    204: { description: "Demande supprimée avec succès" },
-    401: { description: "Utilisateur non authentifier" },
-    403: { description: "Accès refusé" },
-    404: { description: "Demande introuvable" },
+    204: { description: "Request deleted successfully" },
+    401: { description: "Not authenticated" },
+    403: { description: "Access denied" },
+    404: { description: "Request not found" },
   },
 });
 
 registry.registerPath({
   method: "post",
   path: "/api/requests/{id}/assignments",
-  summary: "Assignation d'un engineer à une demande",
+  summary: "Assign an engineer to a request",
   description:
-    "Réservé aux admins. engineer_id doit correspondre à un utilisateur ayant le rôle engineer.",
+    "Admin-only. engineer_id must reference a user with the engineer role.",
   security: [{ [bearerAuth.name]: [] }],
   request: {
     params: idParam("8f14e45f-ceea-4c9c-8f1e-000000000010"),
@@ -329,41 +328,41 @@ registry.registerPath({
   },
   responses: {
     201: {
-      description: "Engineer assigné avec succès",
+      description: "Engineer assigned successfully",
       content: { "application/json": { schema: requestSchema } },
     },
-    400: { description: "engineer_id invalide ou utilisateur non-engineer" },
-    401: { description: "Utilisateur non authentifier" },
-    403: { description: "Accès refusé" },
-    404: { description: "Demande introuvable" },
+    400: { description: "Invalid engineer_id, or the user isn't an engineer" },
+    401: { description: "Not authenticated" },
+    403: { description: "Access denied" },
+    404: { description: "Request not found" },
   },
 });
 
 registry.registerPath({
   method: "get",
   path: "/api/requests/{id}/comments",
-  summary: "Liste des commentaires d'une demande",
+  summary: "List the comments on a request",
   description:
-    "Client : commentaires publics de ses propres demandes uniquement. Staff (admin/engineer) : tous les commentaires, y compris internes, sur n'importe quelle demande.",
+    "Client: public comments on their own requests only. Staff (admin/engineer): every comment, including internal ones, on any request.",
   security: [{ [bearerAuth.name]: [] }],
   request: { params: idParam("8f14e45f-ceea-4c9c-8f1e-000000000010") },
   responses: {
     200: {
-      description: "Commentaires récupérés avec succès",
+      description: "Comments retrieved successfully",
       content: { "application/json": { schema: z.array(commentSchema) } },
     },
-    401: { description: "Utilisateur non authentifier" },
-    403: { description: "Accès refusé" },
-    404: { description: "Demande introuvable" },
+    401: { description: "Not authenticated" },
+    403: { description: "Access denied" },
+    404: { description: "Request not found" },
   },
 });
 
 registry.registerPath({
   method: "post",
   path: "/api/requests/{id}/comments",
-  summary: "Ajout d'un commentaire sur une demande",
+  summary: "Add a comment to a request",
   description:
-    "Client : uniquement en visibilité publique, sur ses propres demandes. Staff (admin/engineer) : sur n'importe quelle demande, visibilité publique ou interne.",
+    "Client: public visibility only, on their own requests. Staff (admin/engineer): on any request, public or internal visibility.",
   security: [{ [bearerAuth.name]: [] }],
   request: {
     params: idParam("8f14e45f-ceea-4c9c-8f1e-000000000010"),
@@ -375,17 +374,17 @@ registry.registerPath({
   },
   responses: {
     201: {
-      description: "Commentaire créé avec succès",
+      description: "Comment created successfully",
       content: { "application/json": { schema: commentSchema } },
     },
-    400: { description: "Donnée invalide" },
-    401: { description: "Utilisateur non authentifier" },
-    403: { description: "Accès refusé" },
-    404: { description: "Demande introuvable" },
+    400: { description: "Invalid data" },
+    401: { description: "Not authenticated" },
+    403: { description: "Access denied" },
+    404: { description: "Request not found" },
   },
 });
 
-// Génération du document JSON OpenAPI
+// Generate the OpenAPI JSON document
 export function generateOpenAPIDocument() {
   const generator = new OpenApiGeneratorV3(registry.definitions);
 

@@ -6,32 +6,32 @@ import { env } from "../config/env.config";
 import { generateId } from "./id.util";
 import { formatDate } from "./date.util";
 
-// nombre de tours d'algorithme (salt rounds)
-const SALT_ROUNDS = 10; // 10 est le standard de l'industrie
+// number of algorithm rounds (salt rounds)
+const SALT_ROUNDS = 10; // 10 is the industry standard
 
-// Message reconnu par le controller pour renvoyer un 409 plutôt qu'un 500 :
-// un email dupliqué est une erreur client (conflit), pas une erreur serveur.
-export const EMAIL_TAKEN_MESSAGE = "Cet email est déjà utilisé.";
+// Message recognized by the controller to return a 409 instead of a 500:
+// a duplicate email is a client error (conflict), not a server error.
+export const EMAIL_TAKEN_MESSAGE = "This email is already in use.";
 
 export class UserService {
-  // implémentation de la partie login avec JWT
+  // Login implementation with JWT
   static async login(email: string, passwordAttempt: string) {
-    // Recherche de l'utilisateur
+    // Look up the user
     const user = userAccountDb.find((u) => u.email === email);
-    if (!user) return null; // utilisateur inconnu
+    if (!user) return null; // unknown user
 
-    // Vérification du compte si actif
-    if (!user.is_active) throw new Error("Compte désactivé");
+    // Check that the account is active
+    if (!user.is_active) throw new Error("Account disabled");
 
-    // comparaison du mot de passe avec le hash
+    // Compare the password against the hash
     const isPasswordValid = await bcrypt.compare(
       passwordAttempt,
       user.password!,
     );
-    if (!isPasswordValid) return null; // Le mot de passe est incorrect
+    if (!isPasswordValid) return null; // incorrect password
 
-    // Si le mot de passe est correcte
-    // Génération du Token JWT
+    // Password is correct
+    // Generate the JWT
     const token = jwt.sign(
       { sub: user.id, role: user.role, email: user.email },
       env.JWT_SECRET,
@@ -41,8 +41,8 @@ export class UserService {
     return { user: this.sanitizeUser(user), token };
   }
 
-  // Masquer le mot de passe avant d'envoyer, et formater les dates pour l'API
-  // (DD-MM-YYYY HH:mm — voir date.util.ts)
+  // Strip the password before returning the user, and format dates for the
+  // API (DD-MM-YYYY HH:mm — see date.util.ts)
   static sanitizeUser(user: User) {
     const { password, ...safeUser } = user;
     return {
@@ -52,19 +52,19 @@ export class UserService {
     };
   }
 
-  // Recupération de tous les utilisateurs sans mot de passe
+  // Fetch all users without their passwords
   static async getAll() {
     return userAccountDb.map(this.sanitizeUser);
   }
 
-  // Récupération d'un utilisateur par ID
+  // Fetch a single user by ID
   static async getById(id: string) {
     const user = userAccountDb.find((u) => u.id === id);
     if (!user) return null;
     return this.sanitizeUser(user);
   }
 
-  // Création d'un utilisation avec mot de passe haché
+  // Create a user with a hashed password
   static async create(
     userData: Omit<User, "id" | "created_at" | "updated_at">,
   ) {
@@ -90,7 +90,7 @@ export class UserService {
     return this.sanitizeUser(newUser);
   }
 
-  // Met à jour un utilisateur existant
+  // Update an existing user
   static async update(
     id: string,
     userData: Partial<Omit<User, "id" | "created_at" | "updated_at">>,
@@ -117,7 +117,7 @@ export class UserService {
     return this.sanitizeUser(user);
   }
 
-  // Supprime un utilisateur
+  // Delete a user
   static async delete(id: string) {
     const index = userAccountDb.findIndex((u) => u.id === id);
     if (index === -1) return false;

@@ -9,24 +9,24 @@ interface JwtPayloadCustom {
   email: string;
 }
 
-// Vérification du TOKEN JWT (authentification)
-export const authentificate = (
+// JWT verification (authentication)
+export const authenticate = (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  // Récupération du header Authorization (Format attendu : "Bearer <token>")
+  // Read the Authorization header (expected format: "Bearer <token>")
   const authHeader = req.headers.authorization;
 
   if (!authHeader?.startsWith("Bearer")) {
-    res.status(401).json({ error: "Accès refusé. Token innexistant" });
+    res.status(401).json({ error: "Access denied. Missing token" });
     return;
   }
 
-  // Extraction du TOKEN
+  // Extract the token
   const token = authHeader.split(" ")[1];
 
-  // Vérification de la signature
+  // Verify the signature
   try {
     const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayloadCustom;
 
@@ -36,25 +36,25 @@ export const authentificate = (
       email: decoded.email,
     };
 
-    next(); // on passe une fois l'authentification réussi
+    next(); // proceed once authentication succeeds
   } catch (error) {
-    console.error("[Auth] Vérification du token échouée:", error);
-    res.status(401).json({ error: "TOKEN invalide ou expiré" });
+    console.error("[Auth] Token verification failed:", error);
+    res.status(401).json({ error: "Invalid or expired token" });
     return;
   }
 };
 
-// Vérification des rôles (système RBAC)
+// Role check (RBAC)
 export const requireRole = (...allowedRoles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
-      res.status(401).json({ error: "utilisateur non authentifié" });
+      res.status(401).json({ error: "Not authenticated" });
       return;
     }
 
-    // Vérification des autorisations pour le rôle de l'utilisateur connecter
+    // Check that the logged-in user's role is authorized
     if (!allowedRoles.includes(req.user.role)) {
-      res.status(403).json({ error: "Accès non autorisé" });
+      res.status(403).json({ error: "Access denied" });
       return;
     }
 

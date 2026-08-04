@@ -1,6 +1,6 @@
-// Initialisation de la base de donnée PostgreSQL
-// Lit et applique src/db/schema.sql — une seule source de vérité pour le
-// schéma, pas de copie à maintenir en double ici.
+// PostgreSQL schema initialization
+// Reads and applies src/db/schema.sql — a single source of truth for the
+// schema, no copy to keep in sync here.
 import fs from "node:fs";
 import path from "node:path";
 import pg from "pg";
@@ -9,10 +9,10 @@ import { env } from "../config/env.config";
 
 const schemaSQL = fs.readFileSync(path.join(__dirname, "schema.sql"), "utf8");
 
-// PostgreSQL exige de se connecter à une base existante — impossible de se
-// connecter directement à `service_portal` tant qu'elle n'a pas été créée.
-// On se connecte donc d'abord à la base de maintenance "postgres" (toujours
-// présente par défaut) pour la créer si besoin, avant de lancer le schéma.
+// PostgreSQL requires connecting to an existing database — it's not possible
+// to connect directly to `service_portal` until it has been created. We
+// first connect to the "postgres" maintenance database (always present by
+// default) to create it if needed, before applying the schema.
 async function ensureDatabaseExists() {
   const { Client } = pg;
   const maintenanceClient = new Client({
@@ -31,15 +31,15 @@ async function ensureDatabaseExists() {
     );
 
     if (rowCount === 0) {
-      // CREATE DATABASE n'accepte pas de paramètre lié ($1) pour le nom de
-      // la base : on valide son format avant de l'interpoler, pour ne
-      // jamais injecter une valeur non maîtrisée dans le SQL.
+      // CREATE DATABASE doesn't accept a bound parameter ($1) for the
+      // database name: validate its format before interpolating it, so we
+      // never inject an untrusted value into the SQL.
       if (!/^[a-zA-Z_]\w*$/.test(env.DB_NAME)) {
-        throw new Error(`Nom de base invalide : "${env.DB_NAME}"`);
+        throw new Error(`Invalid database name: "${env.DB_NAME}"`);
       }
-      console.log(`Base "${env.DB_NAME}" absente, création en cours...`);
+      console.log(`Database "${env.DB_NAME}" doesn't exist, creating it...`);
       await maintenanceClient.query(`CREATE DATABASE "${env.DB_NAME}"`);
-      console.log(`Base "${env.DB_NAME}" créée avec succès`);
+      console.log(`Database "${env.DB_NAME}" created successfully`);
     }
   } finally {
     await maintenanceClient.end();
@@ -47,16 +47,16 @@ async function ensureDatabaseExists() {
 }
 
 async function initDatabase() {
-  console.log("Initilisation du schéma PostgreSQL");
+  console.log("Initializing the PostgreSQL schema");
   try {
     await ensureDatabaseExists();
     await dbPool.query(schemaSQL);
-    console.log(`Schéma SQL appliqué avec succès dans la base [${env.DB_NAME}]`);
+    console.log(`SQL schema applied successfully to database [${env.DB_NAME}]`);
   } catch (error) {
-    console.error("Erreur lors de l'initialisation du Schema SQL : ", error);
+    console.error("Error while initializing the SQL schema: ", error);
     process.exitCode = 1;
   } finally {
-    // Fermeture de la connexion
+    // Close the connection
     await dbPool.end();
   }
 }

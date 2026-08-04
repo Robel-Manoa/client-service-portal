@@ -8,8 +8,8 @@ export class CommentService {
     return { ...comment, created_at: formatDate(comment.created_at) };
   }
 
-  // Liste des commentaires d'une demande. includeInternal contrôle si les
-  // commentaires internes (réservés au staff) sont inclus.
+  // List the comments on a request. includeInternal controls whether
+  // internal comments (staff-only) are included.
   static async listForRequest(
     requestId: string,
     includeInternal: boolean,

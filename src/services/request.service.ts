@@ -19,7 +19,7 @@ export interface RequestRecord{
 }
 
 export class RequestService{
-    // Création d'une demande dans la base de donnée
+    // Create a request in the database
     static async create(data:{
         id: string;
         title: string;
@@ -27,13 +27,13 @@ export class RequestService{
         priority: Priority;
         client_id: string;
     }, db: Pool | PoolClient = dbPool): Promise<RequestRecord>{
-        // CTE + JOIN plutôt qu'un simple RETURNING : le type RequestRecord
-        // exige client_name/client_email (et engineer_name), qu'un INSERT
-        // seul ne peut pas fournir (ce ne sont pas des colonnes de la table
-        // requests). assigned_engineer_id/engineer_name sont forcés à NULL
-        // en littéral : une demande tout juste créée ne peut pas encore
-        // avoir de ligne dans `assignments` (voir schema.sql — l'assignation
-        // est une table séparée, pas une colonne de requests).
+        // CTE + JOIN rather than a plain RETURNING: the RequestRecord type
+        // requires client_name/client_email (and engineer_name), which a
+        // bare INSERT can't provide (they aren't columns on the requests
+        // table). assigned_engineer_id/engineer_name are hardcoded to NULL:
+        // a request that was just created can't have a row in `assignments`
+        // yet (see schema.sql — assignment lives in its own table, not a
+        // column on requests).
         const query = `
             WITH new_request AS (
                 INSERT INTO requests(id, title, description, priority, client_id)
@@ -51,9 +51,9 @@ export class RequestService{
         return result.rows[0];
     }
 
-    // Récupération de toutes les demandes avec informations sur le client et l'ingénieur assigné.
-    // L'assignation vit dans sa propre table (assignments.request_id/engineer_id),
-    // pas dans une colonne de requests — d'où le LEFT JOIN plutôt qu'une colonne directe.
+    // Fetch every request, including client and assigned engineer info.
+    // Assignment lives in its own table (assignments.request_id/engineer_id),
+    // not a column on requests — hence the LEFT JOIN instead of a direct column.
     static async findAll(filter?: {client_id?: string; assigned_engineer_id?: string}, db: Pool | PoolClient = dbPool):Promise<RequestRecord[]>{
         let query = `SELECT r.id, r.title, r.description, r.priority, r.status, r.client_id, r.created_at, r.updated_at,
                             a.engineer_id AS assigned_engineer_id, c.full_name AS client_name, c.email AS client_email, e.full_name AS engineer_name
@@ -64,7 +64,7 @@ export class RequestService{
         const queryParams: any[] = [];
         const conditions: string[] = [];
 
-        // Filtre dynamique selon les rôles (RBAC)
+        // Dynamic filtering based on role (RBAC)
         if(filter?.client_id){
             queryParams.push(filter.client_id);
             conditions.push(`r.client_id = $${queryParams.length}`);
@@ -84,7 +84,7 @@ export class RequestService{
         return result.rows;
     }
 
-    // Récupération d'une demande par ID
+    // Fetch a request by ID
     static async findById(id: string, db: Pool | PoolClient = dbPool): Promise<RequestRecord | null>{
         const query = `SELECT r.id, r.title, r.description, r.priority, r.status, r.client_id, r.created_at, r.updated_at,
                               a.engineer_id AS assigned_engineer_id, c.full_name AS client_name, c.email AS client_email, e.full_name AS engineer_name
@@ -97,7 +97,7 @@ export class RequestService{
         return result.rows[0] || null;
     }
 
-    // Mise à jour d'une demande
+    // Update a request
     static async update(id: string, update:{
         status?: "open" | "in_progress" | "pending_client" | "resolved" | "closed";
         priority?: Priority;
@@ -116,9 +116,9 @@ export class RequestService{
             fields.push(`priority = $${values.length}`);
         }
 
-        // status/priority vivent sur requests ; assigned_engineer_id vit sur
-        // assignments (table séparée) — ce sont deux écritures distinctes,
-        // pas un seul UPDATE requests comme avant.
+        // status/priority live on requests; assigned_engineer_id lives on
+        // assignments (a separate table) — these are two distinct writes,
+        // not a single UPDATE requests like before.
         if(fields.length > 0){
             values.push(new Date());
             fields.push(`updated_at = $${values.length}`);
@@ -127,10 +127,10 @@ export class RequestService{
         }
 
         if(update.assigned_engineer_id !== undefined){
-            // upsert : une demande a au plus une ligne d'assignation
-            // (UNIQUE(request_id) dans schema.sql). engineer_id = NULL pour
-            // désassigner, symétrique avec le ON DELETE SET NULL du schéma —
-            // la ligne d'assignation (donc son historique) est conservée.
+            // upsert: a request has at most one assignment row
+            // (UNIQUE(request_id) in schema.sql). engineer_id = NULL to
+            // unassign, symmetric with the schema's ON DELETE SET NULL —
+            // the assignment row (and its history) is kept.
             await db.query(
                 `INSERT INTO assignments (request_id, engineer_id) VALUES ($1, $2)
                  ON CONFLICT (request_id) DO UPDATE SET engineer_id = EXCLUDED.engineer_id, assigned_at = CURRENT_TIMESTAMP`,

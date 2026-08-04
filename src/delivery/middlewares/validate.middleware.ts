@@ -1,11 +1,11 @@
-// Création d'un middleware pour les validations de donnée grace à Zod
+// Middleware factory for Zod-based request validation
 import { Request, Response, NextFunction } from "express";
 import { ZodError, ZodType } from "zod";
 
-export const valides = (schema: ZodType) => {
+export const validate = (schema: ZodType) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Validation du corps
+      // Validate the request
       await schema.parseAsync({
         body: req.body,
         query: req.query,
@@ -15,7 +15,7 @@ export const valides = (schema: ZodType) => {
       return next();
     } catch (error) {
       if (error instanceof ZodError) {
-        // Formatage des erreurs
+        // Format the errors
         const formattedErrors = error.issues.map((err) => ({
           field: err.path.join(".").replace("body.", ""),
           message: err.message,
@@ -23,7 +23,7 @@ export const valides = (schema: ZodType) => {
 
         res
           .status(400)
-          .json({ error: "Données invalides", details: formattedErrors });
+          .json({ error: "Invalid data", details: formattedErrors });
         return;
       }
 

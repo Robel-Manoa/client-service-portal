@@ -1,19 +1,19 @@
 import { RequestComment, ServiceRequest, User } from "./types";
 import { env } from "../config/env.config";
 
-// base de donnée en mémoire
+// In-memory data store
 
-// Hash bcrypt généré avec bcrypt.hash('password123', 10) — vérifié avec bcrypt.compare avant commit.
-// Vient de env.config.ts (schéma Zod validé) plutôt que de process.env directement,
-// pour que l'app refuse de démarrer avec un message clair si la variable manque,
-// au lieu de planter plus tard sur un bcrypt.compare(undefined).
-const DEMO_PASSWORD_HASH = env.PASSWORD_HASH; // mot de passe en clair : 'password123'
+// bcrypt hash of 'password123' (bcrypt.hash('password123', 10)) — verified
+// with bcrypt.compare before commit.
+// Sourced from env.config.ts (validated Zod schema) rather than process.env
+// directly, so the app refuses to start with a clear message if the
+// variable is missing, instead of failing later on a bcrypt.compare(undefined).
+const DEMO_PASSWORD_HASH = env.PASSWORD_HASH; // plaintext password: 'password123'
 
-// IDs fixes (UUID valides) pour les données de seed, exportés pour que les
-// tests y fassent référence par nom plutôt que de recopier des chaînes en
-// dur. Format reconnaissable (préfixe par type d'entité) uniquement pour le
-// confort de lecture en dev — ce sont de vrais UUID, comme ceux que
-// PostgreSQL générera plus tard avec gen_random_uuid().
+// Fixed (valid) UUIDs for seed data, exported so tests can reference them by
+// name instead of duplicating raw strings. The recognizable format (prefixed
+// by entity type) is purely for dev readability — these are real UUIDs,
+// same shape as what PostgreSQL will later generate with gen_random_uuid().
 export const SEED_IDS = {
   admin: "00000000-0000-4000-8000-000000000000",
   client1: "00000000-0000-4000-8000-000000000001",
@@ -24,8 +24,7 @@ export const SEED_IDS = {
   comment2: "20000000-0000-4000-8000-000000000002",
 } as const;
 
-// Export avec une variable const pour les qualités de code avec sonarqube
-// Utiliser const pour des variables immuables
+// Exported as const for immutability
 export const serviceRequestDb: ServiceRequest[] = [
   {
     id: SEED_IDS.request1,
@@ -49,7 +48,7 @@ export const requestCommentDb: RequestComment[] = [
     id: SEED_IDS.comment1,
     request_id: SEED_IDS.request1,
     author_id: SEED_IDS.engineer,
-    body: "Prise en charge de la demande, analyse en cours.",
+    body: "Picked up this request, investigating now.",
     visibility: "public",
     created_at: "2023-01-02",
   },
@@ -57,7 +56,7 @@ export const requestCommentDb: RequestComment[] = [
     id: SEED_IDS.comment2,
     request_id: SEED_IDS.request1,
     author_id: SEED_IDS.engineer,
-    body: "Note interne : le client a un contrat premium, prioriser.",
+    body: "Internal note: this client is on a premium contract, prioritize.",
     visibility: "internal",
     created_at: "2023-01-02",
   },
