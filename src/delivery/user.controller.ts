@@ -1,13 +1,11 @@
 import { Request, Response } from "express";
 import { UserService, EMAIL_TAKEN_MESSAGE } from "../core/user.service";
 
-// User login
 export const loginUser = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   try {
     const result = await UserService.login(email, password);
-    // invalid credentials
     if (!result) {
       res.status(401).json({ error: "Invalid credentials" });
       return;
@@ -21,14 +19,10 @@ export const loginUser = async (req: Request, res: Response) => {
   }
 };
 
-// Fetch all users
-
 export const getAllUser = async (req: Request, res: Response) => {
   const users = await UserService.getAll();
   res.status(200).json(users);
 };
-
-// Fetch a user by ID
 
 export const getUserById = async (req: Request, res: Response) => {
   const id = req.params.id as string;
@@ -42,15 +36,13 @@ export const getUserById = async (req: Request, res: Response) => {
   res.status(200).json(user);
 };
 
-// Create a user via the user service
-
 export const createUser = async (req: Request, res: Response) => {
   const { name, email, password, role, is_active } = req.body;
 
-  // Newly created users default to the client role
+  // role/is_active are optional in the request — fall back to a plain
+  // active client if the caller doesn't specify them.
   const assignedRole = role || "client";
 
-  // Delegate the creation to the service layer
   try {
     const newUser = await UserService.create({
       name,
@@ -70,9 +62,8 @@ export const createUser = async (req: Request, res: Response) => {
   }
 };
 
-// Update a user (PATCH /api/users/:id, admin-only — see requireRole("admin")
-// upstream, no self-service).
-
+// Admin-only (requireRole("admin") on the route) — including for editing
+// your own profile, there's no self-service path here.
 export const updateUser = async (req: Request, res: Response) => {
   const id = req.params.id as string;
   const { name, email, password, role, is_active } = req.body;
@@ -100,8 +91,6 @@ export const updateUser = async (req: Request, res: Response) => {
     throw error;
   }
 };
-
-// Delete a user via the user service
 
 export const deleteUser = async (req: Request, res: Response) => {
   const id = req.params.id as string;

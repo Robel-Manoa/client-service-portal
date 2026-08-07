@@ -6,32 +6,25 @@ import { env } from "../config/env.config";
 import { generateId } from "./id.util";
 import { formatDate } from "./date.util";
 
-// number of algorithm rounds (salt rounds)
-const SALT_ROUNDS = 10; // 10 is the industry standard
+const SALT_ROUNDS = 10; // bcrypt's recommended default
 
-// Message recognized by the controller to return a 409 instead of a 500:
-// a duplicate email is a client error (conflict), not a server error.
+// Controller checks for this exact message to return 409 instead of 500 —
+// a duplicate email is the client's fault, not ours.
 export const EMAIL_TAKEN_MESSAGE = "This email is already in use.";
 
 export class UserService {
-  // Login implementation with JWT
   static async login(email: string, passwordAttempt: string) {
-    // Look up the user
     const user = userAccountDb.find((u) => u.email === email);
     if (!user) return null; // unknown user
 
-    // Check that the account is active
     if (!user.is_active) throw new Error("Account disabled");
 
-    // Compare the password against the hash
     const isPasswordValid = await bcrypt.compare(
       passwordAttempt,
       user.password!,
     );
-    if (!isPasswordValid) return null; // incorrect password
+    if (!isPasswordValid) return null;
 
-    // Password is correct
-    // Generate the JWT
     const token = jwt.sign(
       { sub: user.id, role: user.role, email: user.email },
       env.JWT_SECRET,
@@ -41,8 +34,8 @@ export class UserService {
     return { user: this.sanitizeUser(user), token };
   }
 
-  // Strip the password before returning the user, and format dates for the
-  // API (DD-MM-YYYY HH:mm — see date.util.ts)
+  // Every read path funnels through here so we never leak a password hash,
+  // and dates come out formatted for the API instead of raw ISO.
   static sanitizeUser(user: User) {
     const { password, ...safeUser } = user;
     return {
@@ -52,19 +45,16 @@ export class UserService {
     };
   }
 
-  // Fetch all users without their passwords
   static async getAll() {
     return userAccountDb.map(this.sanitizeUser);
   }
 
-  // Fetch a single user by ID
   static async getById(id: string) {
     const user = userAccountDb.find((u) => u.id === id);
     if (!user) return null;
     return this.sanitizeUser(user);
   }
 
-  // Create a user with a hashed password
   static async create(
     userData: Omit<User, "id" | "created_at" | "updated_at">,
   ) {
@@ -90,7 +80,6 @@ export class UserService {
     return this.sanitizeUser(newUser);
   }
 
-  // Update an existing user
   static async update(
     id: string,
     userData: Partial<Omit<User, "id" | "created_at" | "updated_at">>,
@@ -117,7 +106,6 @@ export class UserService {
     return this.sanitizeUser(user);
   }
 
-  // Delete a user
   static async delete(id: string) {
     const index = userAccountDb.findIndex((u) => u.id === id);
     if (index === -1) return false;

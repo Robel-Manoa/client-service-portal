@@ -11,22 +11,18 @@ DROP TYPE IF EXISTS user_role CASCADE;
 DROP TYPE IF EXISTS request_priority CASCADE;
 DROP TYPE IF EXISTS request_status CASCADE;
 
--- gen_random_uuid() has been built into PostgreSQL core since version 13;
--- this extension is just a safety net on an older version (IF NOT EXISTS =
--- no-op if it's already native)
+-- gen_random_uuid() is native since PG13; this is just a fallback for
+-- anyone running an older version.
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- create types
 CREATE TYPE user_role AS ENUM ('client', 'engineer', 'admin');
 CREATE TYPE request_priority AS ENUM ('low', 'medium', 'high');
--- Statuses kept in sync with RequestStatus (src/core/types.ts).
+-- Keep in sync with RequestStatus in src/core/types.ts.
 CREATE TYPE request_status AS ENUM ('open', 'in_progress', 'pending_client', 'resolved', 'closed');
 
--- create tables
--- UUIDs everywhere for IDs (instead of SERIAL): same format as the app side
--- (crypto.randomUUID(), see src/core/id.util.ts), so there's no mapping
--- needed between auto-incrementing integers and the string identifiers
--- already in place.
+-- UUIDs instead of SERIAL so IDs match what the app already generates
+-- (crypto.randomUUID(), src/core/id.util.ts) — no int/string mapping to deal with.
 
 -- Table: users
 CREATE TABLE users(
@@ -35,8 +31,8 @@ CREATE TABLE users(
     email VARCHAR(100) NOT NULL UNIQUE,
     password_hash VARCHAR(100) NOT NULL,
     role user_role NOT NULL DEFAULT 'client',
-    -- Was missing: without this column, the app can't persist account
-    -- deactivation (UserService.login/update rely on it).
+    -- UserService.login/update both check this — account deactivation
+    -- doesn't work without it.
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -58,18 +54,16 @@ CREATE TABLE requests(
 CREATE TABLE assignments(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     request_id UUID NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
-    -- Nullable + ON DELETE SET NULL: if the assigned engineer is deleted, we
-    -- keep a record that an assignment existed (instead of losing it) —
-    -- consistent with the fact that a NOT NULL column would be incompatible
-    -- with SET NULL (Postgres would otherwise refuse the user deletion).
+    -- Nullable on purpose: if the engineer gets deleted, SET NULL keeps the
+    -- assignment record around instead of wiping it. Can't be NOT NULL, or
+    -- deleting that user would fail outright.
     engineer_id UUID REFERENCES users(id) ON DELETE SET NULL,
     assigned_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (request_id)
 );
 
--- Table: history of a request's status changes
--- (mirrors ServiceRequest.status_history on the app side — missing from the
--- initial schema even though the app already reads/writes it).
+-- Table: status change history — mirrors ServiceRequest.status_history,
+-- which the app already reads and writes.
 CREATE TABLE request_status_history(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     request_id UUID NOT NULL REFERENCES requests(id) ON DELETE CASCADE,

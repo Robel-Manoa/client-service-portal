@@ -1,11 +1,9 @@
-// Middleware factory for Zod-based request validation
 import { Request, Response, NextFunction } from "express";
 import { ZodError, ZodType } from "zod";
 
 export const validate = (schema: ZodType) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Validate the request
       await schema.parseAsync({
         body: req.body,
         query: req.query,
@@ -15,7 +13,6 @@ export const validate = (schema: ZodType) => {
       return next();
     } catch (error) {
       if (error instanceof ZodError) {
-        // Format the errors
         const formattedErrors = error.issues.map((err) => ({
           field: err.path.join(".").replace("body.", ""),
           message: err.message,

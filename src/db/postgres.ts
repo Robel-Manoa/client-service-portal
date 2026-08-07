@@ -1,7 +1,6 @@
-// PostgreSQL connection pool configuration.
-// Not wired into the running app yet (app.ts/server.ts still run on the
-// in-memory store under core/database.ts) — used so far only by the
-// Postgres-backed service layer under src/services and its tests.
+// Not wired into the running app yet — app.ts/server.ts still run on the
+// in-memory store in core/database.ts. So far only the Postgres-backed
+// service layer under src/services (and its tests) uses this pool.
 import pg from "pg";
 import { env } from "../config/env.config";
 
@@ -13,21 +12,18 @@ export const dbPool = new Pool({
   user: env.DB_USER,
   password: env.DB_PASSWORD,
   database: env.DB_NAME,
-  max: 10, // max number of simultaneous connections in the pool
-  idleTimeoutMillis: 30000, // close idle connections after 30s
-  connectionTimeoutMillis: 5000, // give up if no connection is available after 5s
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
 });
 
-// An idle client in the pool can emit a background network error (e.g. the
-// connection was dropped server-side). Without this listener, `pg` crashes
-// the whole process with an uncaught exception — the official `pg` docs
-// explicitly recommend always adding it.
+// Without this, a dropped connection on an idle pool client takes down the
+// whole process with an uncaught exception. pg's docs call this out
+// explicitly — easy to miss.
 dbPool.on("error", (err) => {
   console.error("[DB] Unexpected error on an idle pool connection:", err);
 });
 
-// "connect" is the only event name pg.Pool recognizes for signaling a new
-// physical connection to PostgreSQL.
 dbPool.on("connect", () => {
   console.log("[DB] New connection established with PostgreSQL");
 });

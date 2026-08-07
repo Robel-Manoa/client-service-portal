@@ -4,9 +4,8 @@ import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 // Lets Zod attach OpenAPI metadata
 extendZodWithOpenApi(z);
 
-// Single source of truth for the list of valid statuses — reused everywhere
-// (payload, history, transition schema) so the five values can't drift
-// apart from one place to another.
+// Defined once and reused below (payload, history, transition schema) so
+// these five values can't quietly drift out of sync with each other.
 const REQUEST_STATUSES = ["open", "in_progress", "pending_client", "resolved", "closed"] as const;
 
 // Request data model (for OpenAPI)

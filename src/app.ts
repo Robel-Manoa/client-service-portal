@@ -4,20 +4,16 @@ import cors from "cors";
 import { rateLimit } from "express-rate-limit";
 import { env } from "./config/env.config";
 
-// API documentation
 import swaggerUi from "swagger-ui-express";
 import { generateOpenAPIDocument } from "./config/docs.config";
 
-// Auth route imports
 import { loginSchema } from "./delivery/schemas/auth.schema";
 
-// Authentication/authorization middleware imports
 import {
   authenticate,
   requireRole,
 } from "./delivery/middlewares/auth.middleware";
 
-// Request controller imports
 import {
   getAllRequests,
   getRequestById,
@@ -30,7 +26,6 @@ import {
   deleteRequest,
 } from "./delivery/request.controller";
 
-// User controller imports
 import {
   loginUser,
   createUser,
@@ -40,7 +35,6 @@ import {
   deleteUser,
 } from "./delivery/user.controller";
 
-// Validation middleware and schema imports
 import { validate } from "./delivery/middlewares/validate.middleware";
 import {
   createUserSchema,
@@ -54,26 +48,20 @@ import {
 } from "./delivery/schemas/request.schema";
 import { createCommentSchema } from "./delivery/schemas/comment.schema";
 
-// App setup
-
 const app = express();
 
-// Server security
-// Enable Helmet
 app.use(helmet());
 
-// CORS configuration
 app.use(
   cors({
     origin:
       env.NODE_ENV === "development"
-        ? "*" // Allow everything in local development
+        ? "*" // wide open locally, real origin only in prod
         : `https://${env.URL_SITE}`,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   }),
 );
 
-// Per-IP rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 100,
@@ -83,25 +71,16 @@ const limiter = rateLimit({
 });
 
 app.use(limiter);
-
-// Base middleware
-// Lets the server parse JSON request bodies
 app.use(express.json());
 
-// OpenAPI / Swagger documentation
 const openApiDocument = generateOpenAPIDocument();
 
-// PUBLIC ROUTES
-// Route to serve the raw OpenAPI document
 app.get("/api-docs.json", (req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.send(openApiDocument);
 });
 
-// Interactive docs UI
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
-
-// Route to check server health
 
 app.get("/health", (req: Request, res: Response) => {
   res.status(200).json({
@@ -111,19 +90,17 @@ app.get("/health", (req: Request, res: Response) => {
   });
 });
 
-// Login route
 app.post("/api/auth/login", validate(loginSchema), loginUser);
 
-// PROTECTED ROUTES
-// authenticate must ALWAYS run before requireRole: authenticate is what sets
-// req.user from the token, requireRole only reads it back.
+// From here down, every route needs a token. authenticate has to come
+// before requireRole on each one — it's what sets req.user, requireRole
+// just reads it back and would 401 everything if it ran first.
 
-// Request CRUD routes
-// GET filters by role at the controller level: client -> their own,
-// engineer -> requests assigned to them, admin -> all of them.
+// GET filters results by role in the controller itself (client -> own,
+// engineer -> assigned, admin -> everything) rather than at the route level.
 app.get("/api/requests", authenticate, getAllRequests);
 app.get("/api/requests/:id", authenticate, getRequestById);
-// Creation is client-only: they're the ones filing requests, not staff.
+// Clients file requests, staff don't.
 app.post(
   "/api/requests",
   authenticate,
@@ -131,16 +108,15 @@ app.post(
   validate(createRequestSchema),
   createRequest,
 );
-// Update the CONTENT (title/description/priority): owner or staff,
-// checked in the controller.
+// Title/description/priority — owner or staff, checked in the controller.
 app.put(
   "/api/requests/:id",
   authenticate,
   validate(updateRequestSchema),
   updateRequest,
 );
-// Change the STATUS, with per-role transition rules (see controller):
-// never for clients, open->resolved only for engineers, any for admins.
+// Status is separate from the PUT above because the transition rules differ
+// per role (see the controller) — clients can't touch it at all.
 app.patch(
   "/api/requests/:id",
   authenticate,
@@ -154,7 +130,6 @@ app.delete(
   deleteRequest,
 );
 
-// Assign an engineer to a request (admin-only)
 app.post(
   "/api/requests/:id/assignments",
   authenticate,
@@ -163,8 +138,8 @@ app.post(
   assignEngineer,
 );
 
-// Comments on a request: open to any authenticated user, filtering
-// (ownership/visibility) is handled in the controller.
+// Any authenticated user can hit these — who sees what (ownership,
+// public vs. internal) is sorted out in the controller.
 app.get("/api/requests/:id/comments", authenticate, getComments);
 app.post(
   "/api/requests/:id/comments",
@@ -173,9 +148,8 @@ app.post(
   createComment,
 );
 
-// User CRUD routes
-// Admin-only: engineers don't need the full user directory to do their job
-// on requests.
+// Admin-only across the board — engineers don't need the full user
+// directory to do their job on requests.
 app.get("/api/users", authenticate, requireRole("admin"), getAllUser);
 app.get(
   "/api/users/:id",
@@ -190,7 +164,7 @@ app.post(
   validate(createUserSchema),
   createUser,
 );
-// Admin-only, including for one's own profile: no self-service.
+// No self-service, even for your own profile.
 app.patch(
   "/api/users/:id",
   authenticate,
@@ -200,19 +174,14 @@ app.patch(
 );
 app.delete("/api/users/:id", authenticate, requireRole("admin"), deleteUser);
 
-// Error handling
-// Catch-all for routes that don't exist
-
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.status(404).json({
     error: "Resource not found",
   });
 });
 
-// Global error handler
-// Safety net: catches unexpected errors so the server doesn't crash, and
-// returns a generic error response instead.
-
+// Last-resort handler so an unhandled error doesn't take the whole
+// process down.
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error("[Server Error]:", err.stack);
   res.status(500).json({
@@ -220,6 +189,5 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-// app.listen() happens in server.ts, not here: this lets tests import
-// `app` without opening a real port.
+// No .listen() here — see server.ts. Keeps this file importable in tests.
 export default app;

@@ -4,8 +4,8 @@ import { generateId } from "./id.util";
 import { formatDate } from "./date.util";
 
 export class RequestService {
-  // Formats dates for the API (DD-MM-YYYY HH:mm) without touching internal
-  // storage, which stays in ISO 8601 (reliable chronological sorting).
+  // Keeps storage in ISO 8601 and only formats dates for the API response —
+  // same reasoning as UserService.sanitizeUser.
   private static formatRequest(request: ServiceRequest): ServiceRequest {
     return {
       ...request,
@@ -18,32 +18,28 @@ export class RequestService {
     };
   }
 
-  // Fetch every request
   static async getAll(): Promise<ServiceRequest[]> {
     return serviceRequestDb.map(this.formatRequest);
   }
 
-  // Fetch the requests belonging to a given client (a client only sees their own)
+  // Clients only ever get their own requests — never the whole table.
   static async getAllForClient(clientId: string): Promise<ServiceRequest[]> {
     return serviceRequestDb
       .filter((r) => r.client_id === clientId)
       .map(this.formatRequest);
   }
 
-  // Fetch the requests assigned to a given engineer
   static async getAllForEngineer(engineerId: string): Promise<ServiceRequest[]> {
     return serviceRequestDb
       .filter((r) => r.assigned_engineer_id === engineerId)
       .map(this.formatRequest);
   }
 
-  // Fetch a single request by ID
   static async getById(id: string): Promise<ServiceRequest | null> {
     const request = serviceRequestDb.find((r) => r.id === id);
     return request ? this.formatRequest(request) : null;
   }
 
-  // Create a request
   static async create(data: {
     client_id: string;
     title: string;
@@ -68,10 +64,9 @@ export class RequestService {
     return this.formatRequest(newRequest);
   }
 
-  // Update a request's content (title/description/priority).
-  // Status changes no longer go through here: see updateStatus, kept
-  // separate so transition rules (who's allowed to move from which status
-  // to which other) stay isolated from plain content edits.
+  // Status isn't handled here on purpose — see updateStatus. Splitting them
+  // keeps the transition rules (who can move a request from which status to
+  // which) out of plain content edits.
   static async update(
     id: string,
     updates: {
@@ -95,10 +90,8 @@ export class RequestService {
     return this.formatRequest(requestUpdate);
   }
 
-  // Change a request's status, with history tracking.
-  // Validating the transition (who's allowed to make which change) is the
-  // caller's responsibility (controller) — the service just applies the
-  // requested change.
+  // No permission checks here — the controller decides who's allowed to
+  // make this transition, this just applies it and logs it to history.
   static async updateStatus(
     id: string,
     status: RequestStatus,
@@ -116,7 +109,6 @@ export class RequestService {
     return this.formatRequest(request);
   }
 
-  // Assign an engineer to a request
   static async assignEngineer(
     id: string,
     engineerId: string,
@@ -130,7 +122,6 @@ export class RequestService {
     return this.formatRequest(request);
   }
 
-  // Delete a request
   static async delete(id: string): Promise<boolean> {
     const index = serviceRequestDb.findIndex((r) => r.id === id);
     if (index === -1) return false;

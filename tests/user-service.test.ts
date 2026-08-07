@@ -1,12 +1,10 @@
-// Tests for the business logic in user.service (UserService, backed by Postgres)
+// UserService tests against a real Postgres instance.
 //
-// Each test runs inside its own SQL transaction: BEGIN before, ROLLBACK
-// after (always, even on failure) — nothing is ever persisted to disk. The
-// ROLLBACK undoes everything done on ONE specific connection: that's why
-// `client` (from dbPool.connect(), a single dedicated connection) is passed
-// explicitly to UserService on every call, instead of letting UserService
-// use dbPool directly (which grabs a different connection per query, which
-// would break the isolation).
+// Each test gets its own BEGIN/ROLLBACK, so nothing here ever actually gets
+// committed. That's also why we pass `client` (one dedicated connection)
+// into UserService explicitly instead of letting it use dbPool directly —
+// dbPool would hand out a different connection per query, and the ROLLBACK
+// only undoes what happened on this one connection.
 
 import { test, beforeEach, afterEach, after } from "node:test";
 import assert from "node:assert/strict";

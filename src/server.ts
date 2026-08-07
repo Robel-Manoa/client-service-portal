@@ -2,12 +2,10 @@ import app from "./app";
 import { env } from "./config/env.config";
 import http from "node:http";
 
-// create the HTTP server
+// Split from app.ts so tests can import the Express app directly without
+// booting a real server on a real port.
 const server = http.createServer(app);
 
-// Process entry point: keeps network bootstrap separate from the app
-// definition (src/app.ts), so tests can import `app` without opening a
-// real port.
 server.listen(env.PORT, () => {
   console.log(`[Success] Server running at: http://localhost:${env.PORT}`);
   console.log(
@@ -15,7 +13,8 @@ server.listen(env.PORT, () => {
   );
 });
 
-// Server shutdown handling
+// server.close() instead of process.exit(): lets in-flight requests finish
+// instead of dropping them mid-response.
 function gracefulShutdown(signal: string) {
   console.log(`Received ${signal}. Shutting down the HTTP server`);
   server.close(() => {
@@ -24,6 +23,7 @@ function gracefulShutdown(signal: string) {
   });
 }
 
-// Catch OS shutdown signals and shut down cleanly
+// SIGTERM: sent by process managers/orchestrators on deploy or restart.
+// SIGINT: Ctrl+C during local dev.
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));

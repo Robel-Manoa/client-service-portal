@@ -1,10 +1,8 @@
 import dotenv from 'dotenv';
 import {z} from 'zod';
 
-// load variables from the .env file into process.env
 dotenv.config();
 
-// required schema
 const envSchema = z.object({
     PORT: z.coerce.number().default(3000),
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -12,10 +10,9 @@ const envSchema = z.object({
     JWT_SECRET: z.string().min(10, "JWT_SECRET must be at least 10 characters long."),
     PASSWORD_HASH: z.string().min(1, "PASSWORD_HASH is required (password for demo accounts)."),
 
-    // PostgreSQL config (src/db/postgres.ts): not wired into the app yet,
-    // so it's optional with sensible defaults to avoid breaking anything
-    // while it's unused. Switch to required (drop .default) once the real
-    // connection is turned on.
+    // Postgres isn't wired into the app yet (see src/db/postgres.ts), so
+    // these have defaults instead of being required — nothing breaks while
+    // they're unused. Drop the defaults once we actually connect.
     DB_HOST: z.string().default("localhost"),
     DB_PORT: z.coerce.number().default(5432),
     DB_USER: z.string().default("postgres"),
@@ -23,7 +20,6 @@ const envSchema = z.object({
     DB_NAME: z.string().default("service_portal"),
 });
 
-// validate process.env against the schema
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
@@ -32,5 +28,4 @@ if (!parsed.success) {
   );
 }
 
-// exported config
 export const env = parsed.data;

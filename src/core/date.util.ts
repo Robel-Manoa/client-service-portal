@@ -1,8 +1,6 @@
-// Formats dates for API responses. Dates are still stored as ISO 8601
-// internally (reliable chronological sorting, no ambiguity); this formatting
-// only happens on the way out, right before the JSON response is sent.
-// UTC is used instead of the server's local time so the output doesn't
-// depend on where the server happens to be deployed.
+// Storage stays ISO 8601 (sorts correctly, no ambiguity) — this only runs
+// on the way out, right before a response is sent. UTC, not server local
+// time, so output doesn't change depending on where this gets deployed.
 export function formatDate(iso: string, withTime = true): string {
   const date = new Date(iso);
 

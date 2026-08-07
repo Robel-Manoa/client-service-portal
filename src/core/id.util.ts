@@ -1,8 +1,7 @@
 import { randomUUID } from "node:crypto";
 
-// Native UUID v4 (crypto.randomUUID): same ID format PostgreSQL will
-// generate (`gen_random_uuid()`, see src/db/schema.sql), so moving off
-// in-memory storage won't require changing identifier types anywhere else.
+// Matches the format gen_random_uuid() produces in Postgres (schema.sql),
+// so swapping the in-memory store for the real DB won't touch ID types.
 export function generateId(): string {
   return randomUUID();
 }

@@ -19,7 +19,6 @@ export interface RequestRecord{
 }
 
 export class RequestService{
-    // Create a request in the database
     static async create(data:{
         id: string;
         title: string;
@@ -84,7 +83,6 @@ export class RequestService{
         return result.rows;
     }
 
-    // Fetch a request by ID
     static async findById(id: string, db: Pool | PoolClient = dbPool): Promise<RequestRecord | null>{
         const query = `SELECT r.id, r.title, r.description, r.priority, r.status, r.client_id, r.created_at, r.updated_at,
                               a.engineer_id AS assigned_engineer_id, c.full_name AS client_name, c.email AS client_email, e.full_name AS engineer_name
@@ -97,7 +95,6 @@ export class RequestService{
         return result.rows[0] || null;
     }
 
-    // Update a request
     static async update(id: string, update:{
         status?: "open" | "in_progress" | "pending_client" | "resolved" | "closed";
         priority?: Priority;

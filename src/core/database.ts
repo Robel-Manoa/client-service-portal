@@ -3,17 +3,16 @@ import { env } from "../config/env.config";
 
 // In-memory data store
 
-// bcrypt hash of 'password123' (bcrypt.hash('password123', 10)) — verified
-// with bcrypt.compare before commit.
-// Sourced from env.config.ts (validated Zod schema) rather than process.env
-// directly, so the app refuses to start with a clear message if the
-// variable is missing, instead of failing later on a bcrypt.compare(undefined).
+// bcrypt hash of 'password123', double-checked with bcrypt.compare before
+// committing. Pulled from env.config.ts instead of process.env directly so
+// a missing var fails fast at startup instead of blowing up later on
+// bcrypt.compare(undefined).
 const DEMO_PASSWORD_HASH = env.PASSWORD_HASH; // plaintext password: 'password123'
 
-// Fixed (valid) UUIDs for seed data, exported so tests can reference them by
-// name instead of duplicating raw strings. The recognizable format (prefixed
-// by entity type) is purely for dev readability — these are real UUIDs,
-// same shape as what PostgreSQL will later generate with gen_random_uuid().
+// Fixed UUIDs so tests can reference seed records by name instead of
+// hardcoding strings everywhere. The prefix per entity type is just to make
+// them easier to eyeball — they're still valid UUIDs, same shape Postgres
+// generates with gen_random_uuid().
 export const SEED_IDS = {
   admin: "00000000-0000-4000-8000-000000000000",
   client1: "00000000-0000-4000-8000-000000000001",

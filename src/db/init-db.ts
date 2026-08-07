@@ -1,6 +1,5 @@
-// PostgreSQL schema initialization
-// Reads and applies src/db/schema.sql — a single source of truth for the
-// schema, no copy to keep in sync here.
+// Reads schema.sql instead of keeping a copy inline, so there's only one
+// place the schema can drift from.
 import fs from "node:fs";
 import path from "node:path";
 import pg from "pg";
@@ -56,7 +55,6 @@ async function initDatabase() {
     console.error("Error while initializing the SQL schema: ", error);
     process.exitCode = 1;
   } finally {
-    // Close the connection
     await dbPool.end();
   }
 }

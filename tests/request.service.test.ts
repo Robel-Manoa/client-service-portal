@@ -1,10 +1,7 @@
-// Tests for the business logic in request.service (RequestService, backed by Postgres)
-//
-// Each test runs inside its own SQL transaction (BEGIN before, ROLLBACK
-// after, always) on a single dedicated connection (`client`), passed
-// explicitly to both RequestService and UserService (to create the
-// prerequisite users — client_id is a NOT NULL foreign key to users).
-// Nothing is ever persisted to disk.
+// RequestService tests against a real Postgres instance. Same BEGIN/ROLLBACK
+// pattern as user-service.test.ts — see the comment there for why `client`
+// gets passed around explicitly. Passed to UserService too, since creating
+// a request needs a real client_id (NOT NULL FK to users).
 
 import { test, beforeEach, afterEach, after } from "node:test";
 import assert from "node:assert/strict";

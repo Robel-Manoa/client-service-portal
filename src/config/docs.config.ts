@@ -1,6 +1,4 @@
-// OpenAPI document generation
-// This file holds the general API info, security schemes, and paths with
-// their HTTP methods.
+// OpenAPI document: API info, security schemes, and every route definition.
 
 import {
   OpenAPIRegistry,
@@ -29,10 +27,8 @@ import {
 const idParam = (example: string) =>
   z.object({ id: z.string().openapi({ example }) });
 
-// Create the OpenAPI registry
 export const registry = new OpenAPIRegistry();
 
-// Declare the authentication scheme
 const bearerAuth = registry.registerComponent("securitySchemes", "BearerAuth", {
   type: "http",
   scheme: "bearer",
@@ -80,7 +76,6 @@ registry.registerPath({
   path: "/api/users",
   summary: "List all users",
   description: "List of every user, admin-only",
-  // This route requires a JWT token
   security: [{ [bearerAuth.name]: [] }],
 
   responses: {
@@ -196,7 +191,6 @@ registry.registerPath({
   },
 });
 
-// Route to fetch a single request by ID
 registry.registerPath({
   method: "get",
   path: "/api/requests/{id}",
@@ -384,7 +378,6 @@ registry.registerPath({
   },
 });
 
-// Generate the OpenAPI JSON document
 export function generateOpenAPIDocument() {
   const generator = new OpenApiGeneratorV3(registry.definitions);
 

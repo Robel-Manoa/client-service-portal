@@ -1,6 +1,3 @@
-// Controller: HTTP routes for service requests, built with Express
-// CRUD operations for service requests
-
 import { Request, Response } from "express";
 import { RequestService } from "../core/request.service";
 import { CommentService } from "../core/comment.service";
@@ -10,8 +7,7 @@ import { UserService } from "../core/user.service";
 // a client only sees/edits their own.
 const isStaff = (role?: string) => role === "admin" || role === "engineer";
 
-// Fetch every request
-// Client: their own. Engineer: those assigned to them. Admin: all of them.
+// Client: their own requests. Engineer: requests assigned to them. Admin: everything.
 export const getAllRequests = async (req: Request, res: Response) => {
   if (!req.user) {
     res.status(401).json({ error: "Not authenticated" });
@@ -30,19 +26,17 @@ export const getAllRequests = async (req: Request, res: Response) => {
   res.status(200).json(requests);
 };
 
-// Create a new request (client-only, see requireRole upstream)
-
+// Client-only — the role check happens on the route (requireRole), not here.
 export const createRequest = async (req: Request, res: Response) => {
   if (!req.user) {
     res.status(401).json({ error: "Not authenticated" });
     return;
   }
 
-  // req.body has already been validated by Zod
   const { title, description, priority } = req.body;
 
-  // client_id always comes from the token, never from the body: a user can
-  // only create a request in their own name.
+  // Always the logged-in user's own ID, never something from the body —
+  // otherwise a client could file a request as someone else.
   const newRequest = await RequestService.create({
     client_id: req.user.id,
     title,
@@ -52,8 +46,6 @@ export const createRequest = async (req: Request, res: Response) => {
 
   res.status(201).json(newRequest);
 };
-
-// Fetch a request by ID
 
 export const getRequestById = async (req: Request, res: Response) => {
   if (!req.user) {
@@ -77,9 +69,9 @@ export const getRequestById = async (req: Request, res: Response) => {
   res.status(200).json(found);
 };
 
-// Update a request's CONTENT (title/description/priority).
-// Status has its own endpoint: see updateRequestStatus.
-
+// Content only (title/description/priority) — status changes go through
+// updateRequestStatus instead, since who's allowed to do that is a
+// different set of rules.
 export const updateRequest = async (req: Request, res: Response) => {
   if (!req.user) {
     res.status(401).json({ error: "Not authenticated" });
@@ -108,9 +100,8 @@ export const updateRequest = async (req: Request, res: Response) => {
   res.status(200).json(updated);
 };
 
-// Change a request's status (PATCH /api/requests/:id)
-// Client: never. Engineer: open -> resolved only. Admin: any transition.
-
+// PATCH /api/requests/:id — clients can never touch this, engineers can only
+// resolve an open request, admins can move to any status.
 export const updateRequestStatus = async (req: Request, res: Response) => {
   if (!req.user) {
     res.status(401).json({ error: "Not authenticated" });
@@ -145,13 +136,12 @@ export const updateRequestStatus = async (req: Request, res: Response) => {
     return;
   }
 
-  // An admin can perform any transition, including to "closed".
+  // Falls through to here for admins with no restriction, and for engineers
+  // making the one transition they're allowed.
   const updated = await RequestService.updateStatus(id, status);
 
   res.status(200).json(updated);
 };
-
-// Assign an engineer to a request (admin-only)
 
 export const assignEngineer = async (req: Request, res: Response) => {
   if (!req.user) {
@@ -181,10 +171,8 @@ export const assignEngineer = async (req: Request, res: Response) => {
   res.status(201).json(updated);
 };
 
-// List the comments on a request.
-// Client: public comments on their own requests only.
-// Staff (admin/engineer): every comment, including internal ones.
-
+// Clients see public comments on their own requests; staff see everything,
+// internal notes included.
 export const getComments = async (req: Request, res: Response) => {
   if (!req.user) {
     res.status(401).json({ error: "Not authenticated" });
@@ -210,10 +198,6 @@ export const getComments = async (req: Request, res: Response) => {
   res.status(200).json(comments);
 };
 
-// Create a comment on a request.
-// A client can only post with public visibility (enforced here regardless
-// of the value sent); only staff can create an internal comment.
-
 export const createComment = async (req: Request, res: Response) => {
   if (!req.user) {
     res.status(401).json({ error: "Not authenticated" });
@@ -236,6 +220,8 @@ export const createComment = async (req: Request, res: Response) => {
   }
 
   const { body, visibility } = req.body;
+  // A client asking for "internal" gets silently downgraded to "public" —
+  // only staff can actually create an internal note.
   const finalVisibility = staff && visibility === "internal" ? "internal" : "public";
 
   const comment = await CommentService.create({
@@ -248,8 +234,6 @@ export const createComment = async (req: Request, res: Response) => {
   res.status(201).json(comment);
 };
 
-// Delete a request
-
 export const deleteRequest = async (req: Request, res: Response) => {
   const id = req.params.id as string;
   const deleted = await RequestService.delete(id);
@@ -259,7 +243,5 @@ export const deleteRequest = async (req: Request, res: Response) => {
     return;
   }
 
-  res.status(204).send(); // 204 No Content
-
-  // The request succeeded, but there's no content to return.
+  res.status(204).send();
 };
