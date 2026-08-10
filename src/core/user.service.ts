@@ -1,10 +1,11 @@
 import bcrypt from "bcrypt";
-import { userAccountDb } from "./database";
 import { User } from "./types";
 import jwt from "jsonwebtoken";
 import { env } from "../config/env.config";
 import { generateId } from "./id.util";
 import { formatDate } from "./date.util";
+import type { UserRepository } from "./ports";
+import { userRepository as defaultUsers } from "./in-memory.repositories";
 
 const SALT_ROUNDS = 10; // bcrypt's recommended default
 
@@ -13,8 +14,12 @@ const SALT_ROUNDS = 10; // bcrypt's recommended default
 export const EMAIL_TAKEN_MESSAGE = "This email is already in use.";
 
 export class UserService {
-  static async login(email: string, passwordAttempt: string) {
-    const user = userAccountDb.find((u) => u.email === email);
+  static async login(
+    email: string,
+    passwordAttempt: string,
+    users: UserRepository = defaultUsers,
+  ) {
+    const user = await users.findByEmail(email);
     if (!user) return null; // unknown user
 
     if (!user.is_active) throw new Error("Account disabled");
@@ -45,20 +50,21 @@ export class UserService {
     };
   }
 
-  static async getAll() {
-    return userAccountDb.map(this.sanitizeUser);
+  static async getAll(users: UserRepository = defaultUsers) {
+    return (await users.findAll()).map(this.sanitizeUser);
   }
 
-  static async getById(id: string) {
-    const user = userAccountDb.find((u) => u.id === id);
+  static async getById(id: string, users: UserRepository = defaultUsers) {
+    const user = await users.findById(id);
     if (!user) return null;
     return this.sanitizeUser(user);
   }
 
   static async create(
     userData: Omit<User, "id" | "created_at" | "updated_at">,
+    users: UserRepository = defaultUsers,
   ) {
-    const emailTaken = userAccountDb.some((u) => u.email === userData.email);
+    const emailTaken = (await users.findByEmail(userData.email)) !== undefined;
     if (emailTaken) throw new Error(EMAIL_TAKEN_MESSAGE);
 
     const hashedPassword = await bcrypt.hash(userData.password!, SALT_ROUNDS);
@@ -76,21 +82,21 @@ export class UserService {
       updated_at: now,
     };
 
-    userAccountDb.push(newUser);
+    await users.insert(newUser);
     return this.sanitizeUser(newUser);
   }
 
   static async update(
     id: string,
     userData: Partial<Omit<User, "id" | "created_at" | "updated_at">>,
+    users: UserRepository = defaultUsers,
   ) {
-    const user = userAccountDb.find((u) => u.id === id);
+    const user = await users.findById(id);
     if (!user) return null;
 
     if (userData.email !== undefined && userData.email !== user.email) {
-      const emailTaken = userAccountDb.some(
-        (u) => u.id !== id && u.email === userData.email,
-      );
+      const existing = await users.findByEmail(userData.email);
+      const emailTaken = existing !== undefined && existing.id !== id;
       if (emailTaken) throw new Error(EMAIL_TAKEN_MESSAGE);
     }
 
@@ -103,14 +109,11 @@ export class UserService {
 
     user.updated_at = new Date().toISOString();
 
+    await users.save(user);
     return this.sanitizeUser(user);
   }
 
-  static async delete(id: string) {
-    const index = userAccountDb.findIndex((u) => u.id === id);
-    if (index === -1) return false;
-
-    userAccountDb.splice(index, 1);
-    return true;
+  static async delete(id: string, users: UserRepository = defaultUsers) {
+    return users.deleteById(id);
   }
 }

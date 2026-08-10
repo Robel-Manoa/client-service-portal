@@ -96,8 +96,8 @@ app.post("/api/auth/login", validate(loginSchema), loginUser);
 // before requireRole on each one — it's what sets req.user, requireRole
 // just reads it back and would 401 everything if it ran first.
 
-// GET filters results by role in the controller itself (client -> own,
-// engineer -> assigned, admin -> everything) rather than at the route level.
+// GET filters results by role inside the controller (client -> own,
+// engineer -> assigned, admin -> everything) — not up here at the route.
 app.get("/api/requests", authenticate, getAllRequests);
 app.get("/api/requests/:id", authenticate, getRequestById);
 // Clients file requests, staff don't.

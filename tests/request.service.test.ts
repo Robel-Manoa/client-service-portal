@@ -27,8 +27,8 @@ after(async () => {
   await dbPool.end();
 });
 
-// Creates a user (client or engineer) as a prerequisite for requests, via
-// UserService rather than raw SQL — same transactional connection.
+// Requests need a real client_id, so spin one up through UserService first,
+// on the same transactional connection.
 async function createTestUser(role: "client" | "engineer" = "client") {
   return UserService.create(
     {
