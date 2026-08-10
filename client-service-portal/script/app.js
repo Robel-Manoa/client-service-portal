@@ -406,18 +406,19 @@ if (requestInfo) {
     }
 
     /** @returns {void} */
-    function renderRequest() {
-      if (!currentUser) return;
-      const request = storage.getRequestById(requestId);
+    function clearRequestDetailPanels() {
+      if (requestInfo) requestInfo.innerHTML = "<p>Request not found.</p>";
+      if (statusHistoryList) statusHistoryList.innerHTML = "";
+      if (statusControls) statusControls.innerHTML = "";
+      if (commentsList) commentsList.innerHTML = "";
+    }
 
-      if (!request) {
-        if (requestInfo) requestInfo.innerHTML = "<p>Request not found.</p>";
-        if (statusHistoryList) statusHistoryList.innerHTML = "";
-        if (statusControls) statusControls.innerHTML = "";
-        if (commentsList) commentsList.innerHTML = "";
-        return;
-      }
-
+    /**
+     * Fills in the read-only detail fields and the engineer-assignment select.
+     * @param {ServiceRequest} request
+     * @returns {void}
+     */
+    function renderRequestFields(request) {
       /** @type {(id: string, text: string) => void} */
       const setText = (id, text) => {
         const el = document.getElementById(id);
@@ -441,33 +442,72 @@ if (requestInfo) {
       if (assignEngineerSelect) {
         assignEngineerSelect.value = assignment ? assignment.engineer_id : "";
       }
+    }
 
-      if (statusHistoryList) {
-        statusHistoryList.innerHTML = "";
-        (request.status_history || []).forEach((entry) => {
-          const li = document.createElement("li");
-          li.textContent = `${entry.status} - ${entry.at}`;
-          statusHistoryList.appendChild(li);
-        });
+    /**
+     * @param {StatusHistoryEntry[] | undefined} statusHistory
+     * @returns {void}
+     */
+    function renderStatusHistory(statusHistory) {
+      if (!statusHistoryList) return;
+      statusHistoryList.innerHTML = "";
+      (statusHistory || []).forEach((entry) => {
+        const li = document.createElement("li");
+        li.textContent = `${entry.status} - ${entry.at}`;
+        statusHistoryList.appendChild(li);
+      });
+    }
+
+    /**
+     * Whether the current user is allowed to change a request's status.
+     * @returns {boolean}
+     */
+    function canEditStatus() {
+      return !!currentUser && currentUser.role !== "client";
+    }
+
+    /**
+     * Statuses `currentStatus` may legally transition to.
+     * @param {RequestStatus} currentStatus
+     * @returns {RequestStatus[]}
+     */
+    function getAvailableNextStatuses(currentStatus) {
+      return ALL_STATUSES.filter((status) =>
+        storage.canTransition(currentStatus, status),
+      );
+    }
+
+    /**
+     * @param {RequestStatus} currentStatus
+     * @returns {void}
+     */
+    function renderStatusControls(currentStatus) {
+      if (!statusControls) return;
+      statusControls.innerHTML = "";
+      if (!canEditStatus()) return;
+
+      getAvailableNextStatuses(currentStatus).forEach((status) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = `Move to ${status}`;
+        button.dataset.status = status;
+        statusControls.appendChild(button);
+      });
+    }
+
+    /** @returns {void} */
+    function renderRequest() {
+      if (!currentUser) return;
+      const request = storage.getRequestById(requestId);
+
+      if (!request) {
+        clearRequestDetailPanels();
+        return;
       }
 
-      if (statusControls) {
-        statusControls.innerHTML = "";
-        if (currentUser.role !== "client") {
-          const nextStatuses = ALL_STATUSES.filter((status) =>
-            storage.canTransition(request.status, status),
-          );
-
-          nextStatuses.forEach((status) => {
-            const button = document.createElement("button");
-            button.type = "button";
-            button.textContent = `Move to ${status}`;
-            button.dataset.status = status;
-            statusControls.appendChild(button);
-          });
-        }
-      }
-
+      renderRequestFields(request);
+      renderStatusHistory(request.status_history);
+      renderStatusControls(request.status);
       renderComments();
     }
 
