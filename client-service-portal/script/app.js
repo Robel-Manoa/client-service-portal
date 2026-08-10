@@ -385,9 +385,9 @@ if (requestInfo) {
       }
     }
 
-    /** @returns {void} */
-    function renderComments() {
-      if (!commentsList || !currentUser) return;
+    /** @type {() => void} */
+    const renderComments = () => {
+      if (!commentsList) return;
       commentsList.innerHTML = "";
       const includeInternal = currentUser.role !== "client";
       const comments = storage.getCommentsForRequest(requestId, {
@@ -403,15 +403,15 @@ if (requestInfo) {
         }: ${comment.content} - ${comment.created_at}`;
         commentsList.appendChild(li);
       });
-    }
+    };
 
-    /** @returns {void} */
-    function clearRequestDetailPanels() {
-      if (requestInfo) requestInfo.innerHTML = "<p>Request not found.</p>";
+    /** @type {() => void} */
+    const clearRequestDetailPanels = () => {
+      requestInfo.innerHTML = "<p>Request not found.</p>";
       if (statusHistoryList) statusHistoryList.innerHTML = "";
       if (statusControls) statusControls.innerHTML = "";
       if (commentsList) commentsList.innerHTML = "";
-    }
+    };
 
     /**
      * Fills in the read-only detail fields and the engineer-assignment select.
@@ -460,11 +460,9 @@ if (requestInfo) {
 
     /**
      * Whether the current user is allowed to change a request's status.
-     * @returns {boolean}
+     * @type {() => boolean}
      */
-    function canEditStatus() {
-      return !!currentUser && currentUser.role !== "client";
-    }
+    const canEditStatus = () => currentUser.role !== "client";
 
     /**
      * Statuses `currentStatus` may legally transition to.
@@ -495,9 +493,8 @@ if (requestInfo) {
       });
     }
 
-    /** @returns {void} */
-    function renderRequest() {
-      if (!currentUser) return;
+    /** @type {() => void} */
+    const renderRequest = () => {
       const request = storage.getRequestById(requestId);
 
       if (!request) {
@@ -509,7 +506,7 @@ if (requestInfo) {
       renderStatusHistory(request.status_history);
       renderStatusControls(request.status);
       renderComments();
-    }
+    };
 
     // Event delegation: the status buttons above are recreated on every render, so a single listener on their stable parent avoids re-attaching one listener per button on every status change.
     if (statusControls) {
