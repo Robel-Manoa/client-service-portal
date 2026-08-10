@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "tsx --test tests/**/*.test.ts",
-    "db:init": "tsx src/db/init-db.ts"
+    "db:init": "tsx src/db/init-db.ts",
+    "ci": "npm install"
   },
   "keywords": [],
   "author": "",

@@ -17,7 +17,7 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
           POSTGRES_DB: service_portal
         ports:
           - 5432:5432
@@ -33,12 +33,12 @@ jobs:
       # password are publicly documented in the frontend README. This is a
       # freshly generated bcrypt hash of that same documented password,
       # used only to seed demo data for CI test runs.
-      PASSWORD_HASH: $2b$10$KW/Sjb1rbmW7TSpJYhICeu6FX/Upskb9rok90DFW1cHNGHV638X0m
-      JWT_SECRET: ${{ secrets.CI_JWT_SECRET || 'ci-only-jwt-signing-secret' }}
+      PASSWORD_HASH: ${{ secrets.CI_PASSWORD_HASH }}
+      JWT_SECRET: ${{ secrets.CI_JWT_SECRET }}
       DB_HOST: localhost
       DB_PORT: 5432
       DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
       DB_NAME: service_portal
 
     steps:
