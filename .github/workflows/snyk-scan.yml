@@ -13,6 +13,16 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server-client-service-portal/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: server-client-service-portal
+        run: npm ci --ignore-scripts
+
       # Use the action matching your language (node, python, go, and so on)
       - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/node@9adf32b1121593767fc3c057af55b55db032dc04 # v1.0.0
