@@ -1,0 +1,74 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build-test-scan:
+    name: Build, Test & SonarQube Scan
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
+          POSTGRES_DB: service_portal
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      # Not a real secret: the demo accounts and their "password123"
+      # password are publicly documented in the frontend README. This is a
+      # freshly generated bcrypt hash of that same documented password,
+      # used only to seed demo data for CI test runs.
+      PASSWORD_HASH: ${{ secrets.CI_PASSWORD_HASH }}
+      JWT_SECRET: ${{ secrets.CI_JWT_SECRET }}
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
+      DB_NAME: service_portal
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server-client-service-portal/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: server-client-service-portal
+        run: npm ci
+
+      - name: Initialize database schema
+        working-directory: server-client-service-portal
+        run: npm run db:init
+
+      - name: Run backend tests
+        working-directory: server-client-service-portal
+        run: npm test
+
+      - name: Build backend
+        working-directory: server-client-service-portal
+        run: npm run build
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8.1.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
