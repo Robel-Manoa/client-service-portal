@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="../styles/styles.css" />
     <title>Client Service Portal</title>
-    <script src="../data/data.js" defer></script>
-    <script src="../script/storage.js" defer></script>
+    <script src="../script/api.js" defer></script>
     <script src="../script/app.js" defer></script>
   </head>
   <body>
@@ -49,7 +48,13 @@
         <h2>Edit user</h2>
         <form action="" method="post" id="edit-user-form">
           <label for="edit-user-name">Name :</label>
-          <input type="text" name="name" id="edit-user-name" required />
+          <input
+            type="text"
+            name="name"
+            id="edit-user-name"
+            required
+            minlength="5"
+          />
           <label for="edit-user-email">Email :</label>
           <input type="email" name="email" id="edit-user-email" required />
           <label for="edit-user-role">Role</label>

@@ -4,11 +4,11 @@
  * Page orchestration for the Client Service Portal.
  *
  * This single script is loaded on every page (see each `pages/*.html`
- * file). Each block below guards itself behind the DOM elements it
- * needs, so one script can safely drive several different pages without erroring on elements
- * that don't exist there. storage (script/storage.js) is the shared
- * data layer; this file only ever reads through it and manipulates the
- * DOM — it never touches sessionStorage directly.
+ * file). Each section below only runs on the page it belongs to — it
+ * checks for one DOM element that only exists on that page, and bails
+ * out immediately if it's not there. That's what lets one script safely
+ * drive several different pages. api (script/api.js) is the shared
+ * data layer; this file only ever reads through it and manipulates the DOM.
  */
 
 const ROLE_HOME = {
@@ -28,9 +28,9 @@ const ALL_STATUSES = [
 
 /**
  * Clones a <template>'s content and fills its text-only [data-field]
- * slots. Using native <template> instead of building markup from string interpolation keeps
- * user-entered values (names, titles, comments, ...) out of innerHTML
- * entirely, so there is no HTML-escaping to get right or forget.
+ * slots. Using <template> instead of building markup from string
+ * interpolation keeps user-entered values (names, titles, comments, ...)
+ * out of innerHTML entirely, so there's no HTML-escaping to get right.
  * @param {HTMLTemplateElement} template
  * @param {Record<string, string>} fields
  * @returns {DocumentFragment}
@@ -47,13 +47,13 @@ function cloneTemplate(template, fields) {
 }
 
 /**
- * Access-control gatekeeper. Redirects to the login page if no user is
+ * Access-control gatekeeper. Redirects to the login page if no one is
  * logged in, or if the logged-in user's role isn't part of requiredRole.
  * @param {UserRole | UserRole[]} [requiredRole] a single role or list of allowed roles
  * @returns {User | null} the current user, or `null` if redirected away
  */
 function requireAuth(requiredRole) {
-  const user = storage.getCurrentUser();
+  const user = api.getCurrentUser();
   if (!user) {
     window.location.href = "../index.html";
     return null;
@@ -70,14 +70,29 @@ function requireAuth(requiredRole) {
   return user;
 }
 
-// --- Login / logout -----------------------------------------------------
+/**
+ * Turns a failed api.js call into a message worth showing the user:
+ * field-level validation errors (400) are joined into one string,
+ * everything else falls back to the backend's own error message.
+ * @param {unknown} err
+ * @returns {string}
+ */
+function describeError(err) {
+  if (err instanceof ApiError && err.details && err.details.length) {
+    return err.details.map((detail) => detail.message).join("\n");
+  }
+  if (err instanceof Error) return err.message;
+  return "Something went wrong. Please try again.";
+}
+
+// --- Login (index.html) ---------------------------------------------------
 
 const loginForm = /** @type {HTMLFormElement | null} */ (
   document.getElementById("loginForm")
 );
 
 if (loginForm) {
-  loginForm.addEventListener("submit", function (event) {
+  loginForm.addEventListener("submit", async function (event) {
     event.preventDefault();
 
     const email = /** @type {HTMLInputElement} */ (
@@ -87,78 +102,42 @@ if (loginForm) {
       document.getElementById("password")
     ).value;
     const errorMessage = document.querySelector(".error-message");
+    if (errorMessage) errorMessage.textContent = "";
 
-    const user = storage.login(email, password);
-    if (!user) {
-      if (errorMessage) {
-        errorMessage.textContent =
-          "Invalid email or password. Please try again.";
-      }
-      return;
+    try {
+      const user = await api.login(email, password);
+      window.location.href = "pages/index-" + user.role + ".html";
+    } catch (err) {
+      if (!errorMessage) return;
+      errorMessage.textContent =
+        err instanceof ApiError && err.status === 401
+          ? "Invalid email or password. Please try again."
+          : describeError(err);
     }
-
-    window.location.href = "pages/index-" + user.role + ".html";
   });
 }
+
+// --- Logout (every protected page) -----------------------------------------
 
 const logoutButton = document.getElementById("logoutButton");
 
 if (logoutButton) {
   logoutButton.addEventListener("click", function (event) {
     event.preventDefault();
-
-    storage.logout();
+    api.logout();
     window.location.href = "../index.html";
   });
 }
 
-// --- User list (client-list.html) ---------------------------------------
+// --- Show/hide admin panels (client-list.html, detail-users.html) ----------
+//
+// These four are called from inline onclick="..." attributes in the HTML,
+// which only works if they're real global functions — they can't live
+// inside the page-init functions below. Each pair only exists on its own
+// page, so the other page's lookup is null and simply does nothing.
 
-const lists = document.getElementById("clients-list");
-const userRowTemplate = /** @type {HTMLTemplateElement | null} */ (
-  document.getElementById("user-row-template")
-);
-
-/**
- * Renders the user table on the admin/engineer client list page.
- * @param {User[]} users
- * @returns {void}
- */
-function userList(users) {
-  if (!lists || !userRowTemplate) return;
-  lists.innerHTML = "";
-
-  users.forEach((user) => {
-    const row = cloneTemplate(userRowTemplate, {
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    });
-
-    row
-      .querySelector('[data-field="role"]')
-      ?.classList.add(`role-badge--${user.role}`);
-
-    const link = /** @type {HTMLAnchorElement | null} */ (
-      row.querySelector('[data-field="link"]')
-    );
-    if (link) {
-      link.href = `./detail-users.html?id=${encodeURIComponent(user.id)}`;
-    }
-
-    lists.appendChild(row);
-  });
-}
-
-const addUserForm = /** @type {HTMLFormElement | null} */ (
-  document.getElementById("add-user-form")
-);
 const adminActions = document.getElementById("admin-actions");
-const editUser = document.getElementById("user-admin-actions");
-
-// Called from inline onclick attributes in client-list.html and
-// detail-users.html — each pair only ever exists on its own page, so a
-// missing element (null) is expected on the other page and simply ignored.
+const editUserActions = document.getElementById("user-admin-actions");
 
 /** @returns {void} */
 function showForm() {
@@ -172,541 +151,672 @@ function removeForm() {
 
 /** @returns {void} */
 function showFormEdit() {
-  if (editUser) editUser.style.display = "block";
+  if (editUserActions) editUserActions.style.display = "block";
 }
 
 /** @returns {void} */
 function removeFormEdit() {
-  if (editUser) editUser.style.display = "none";
+  if (editUserActions) editUserActions.style.display = "none";
 }
 
-if (lists) {
-  const currentUser = requireAuth(["admin", "engineer"]);
+// --- Client list (client-list.html) -----------------------------------
 
-  if (currentUser) {
-    const homeLink = document.getElementById("homeLink");
-    if (homeLink instanceof HTMLAnchorElement) {
-      homeLink.href = ROLE_HOME[currentUser.role];
-    }
+(function initClientListPage() {
+  const clientsList = document.getElementById("clients-list");
+  if (!clientsList) return;
 
-    userList(storage.getUsers());
+  const userRowTemplate = /** @type {HTMLTemplateElement | null} */ (
+    document.getElementById("user-row-template")
+  );
+  const addUserForm = /** @type {HTMLFormElement | null} */ (
+    document.getElementById("add-user-form")
+  );
 
-    if (currentUser.role === "admin") {
-      if (addUserForm) {
-        addUserForm.addEventListener("submit", function (event) {
-          event.preventDefault();
+  // The list itself is GET /api/users, which the backend only allows for
+  // admins — engineers can no longer see this page.
+  const currentUser = requireAuth("admin");
+  if (!currentUser) return;
 
-          // Read "name" and "role" by id, not addUserForm.name/.role:
-          // HTMLFormElement already has its own name IDL attribute, and
-          // every Element already has a role IDL attribute.
-          // Both shadow a same-named child control accessed via dot
-          // notation, so the bare form.name / form.role never reach the
-          // input/select below.
-          const nameInput = /** @type {HTMLInputElement} */ (
-            document.getElementById("add-user-name")
-          );
-          const roleSelect = /** @type {HTMLSelectElement} */ (
-            document.getElementById("add-user-role")
-          );
-
-          const created = storage.createUser({
-            name: nameInput.value,
-            email: addUserForm.email.value,
-            password: addUserForm.password.value,
-            role: /** @type {UserRole} */ (roleSelect.value),
-          });
-
-          if (!created) {
-            alert("A user with this email already exists.");
-            return;
-          }
-
-          addUserForm.reset();
-          userList(storage.getUsers());
-        });
-      }
-    } else if (adminActions) {
-      adminActions.remove();
-    }
+  const homeLink = document.getElementById("homeLink");
+  if (homeLink instanceof HTMLAnchorElement) {
+    homeLink.href = ROLE_HOME[currentUser.role];
   }
-}
 
-// --- Requests table (dashboards) -----------------------------------------
+  // Written as `const renderUserList = (users) => {}` rather than
+  // `function renderUserList(users) {}`: TypeScript only trusts the
+  // `if (!clientsList) return` check above for the rest of *this*
+  // function's own body, not for a separately hoisted nested function —
+  // so a `function` declaration here would need its own redundant null
+  // check on `clientsList` to type-check. An arrow function assigned to a
+  // `const`, defined inline at this point, keeps that check in scope.
+  // The same reasoning applies everywhere else in this file you see this
+  // `const fn = () => {}` shape instead of a plain `function fn() {}`.
 
-const tableBody = document.getElementById("requests-table-body");
-const requestRowTemplate = /** @type {HTMLTemplateElement | null} */ (
-  document.getElementById("request-row-template")
-);
-const form = document.getElementById("filterForm");
-const filterInput = /** @type {HTMLInputElement | null} */ (
-  document.getElementById("filterInput")
-);
-const pageRole = /** @type {UserRole | undefined} */ (
-  /** @type {HTMLElement} */ (document.body).dataset.role
-);
+  /** @type {(users: User[]) => void} */
+  const renderUserList = (users) => {
+    if (!userRowTemplate) return;
+    clientsList.innerHTML = "";
 
-/**
- * Renders the requests table shared by the client, engineer, and admin
- * dashboards.
- * @param {ServiceRequest[]} requests
- * @returns {void}
- */
-function renderTable(requests) {
-  if (!tableBody || !requestRowTemplate) return;
-  tableBody.innerHTML = "";
-
-  requests.forEach((request) => {
-    const row = cloneTemplate(requestRowTemplate, {
-      title: request.title,
-      priority: request.priority,
-      status: request.status,
-      created_at: request.created_at,
-    });
-
-    const link = /** @type {HTMLAnchorElement | null} */ (
-      row.querySelector('[data-field="link"]')
-    );
-    if (link) {
-      link.href = `./request-detail.html?id=${encodeURIComponent(request.id)}`;
-    }
-
-    tableBody.appendChild(row);
-  });
-}
-
-if (tableBody && form && filterInput && pageRole) {
-  const currentUser = requireAuth(pageRole);
-
-  if (currentUser) {
-    let requests = /** @type {ServiceRequest[]} */ ([]);
-    if (pageRole === "client")
-      requests = storage.getRequestsForClient(currentUser.id);
-    else if (pageRole === "engineer")
-      requests = storage.getRequestsForEngineer(currentUser.id);
-    else if (pageRole === "admin") requests = storage.getRequests();
-
-    renderTable(requests);
-
-    form.addEventListener("submit", function (event) {
-      event.preventDefault();
-
-      const selectedStatus = filterInput.value.toLowerCase();
-      if (selectedStatus === "all") {
-        renderTable(requests);
-        return;
-      }
-
-      const filteredData = requests.filter((request) => {
-        return request.status.toLowerCase() === selectedStatus;
+    users.forEach((user) => {
+      const row = cloneTemplate(userRowTemplate, {
+        name: user.name,
+        email: user.email,
+        role: user.role,
       });
 
-      renderTable(filteredData);
-    });
-  }
-}
+      row
+        .querySelector('[data-field="role"]')
+        ?.classList.add(`role-badge--${user.role}`);
 
-// --- Add request (add-request.html) --------------------------------------
-
-const addRequestForm = /** @type {HTMLFormElement | null} */ (
-  document.getElementById("add-request-form")
-);
-
-if (addRequestForm) {
-  const currentUser = requireAuth("client");
-
-  if (currentUser) {
-    addRequestForm.addEventListener("submit", function (event) {
-      event.preventDefault();
-
-      // Read by id, not addRequestForm.title: every HTMLElement already
-      // has its own title IDL attribute, which shadows the child input named "title".
-      const titleInput = /** @type {HTMLInputElement} */ (
-        document.getElementById("title")
+      const link = /** @type {HTMLAnchorElement | null} */ (
+        row.querySelector('[data-field="link"]')
       );
+      if (link) {
+        link.href = `./detail-users.html?id=${encodeURIComponent(user.id)}`;
+      }
 
-      storage.addRequest({
-        client_id: currentUser.id,
+      clientsList.appendChild(row);
+    });
+  };
+
+  api
+    .getUsers()
+    .then(renderUserList)
+    .catch((err) => {
+      clientsList.innerHTML = `<p>${describeError(err)}</p>`;
+    });
+
+  if (!addUserForm) return;
+
+  addUserForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+
+    // Read "name" and "role" by id, not addUserForm.name/.role:
+    // HTMLFormElement already has its own name IDL attribute, and every
+    // Element already has a role IDL attribute (ARIA reflection). Both
+    // silently shadow a same-named child control accessed via dot
+    // notation, so form.name / form.role would never reach these inputs.
+    const nameInput = /** @type {HTMLInputElement} */ (
+      document.getElementById("add-user-name")
+    );
+    const roleSelect = /** @type {HTMLSelectElement} */ (
+      document.getElementById("add-user-role")
+    );
+
+    try {
+      await api.createUser({
+        name: nameInput.value,
+        email: addUserForm.email.value,
+        password: addUserForm.password.value,
+        role: /** @type {UserRole} */ (roleSelect.value),
+      });
+      addUserForm.reset();
+      renderUserList(await api.getUsers());
+    } catch (err) {
+      alert(describeError(err));
+    }
+  });
+})();
+
+// --- Dashboards (index-{admin,client,engineer}.html) ------------------
+
+(function initDashboardPage() {
+  const tableBody = document.getElementById("requests-table-body");
+  const requestRowTemplate = /** @type {HTMLTemplateElement | null} */ (
+    document.getElementById("request-row-template")
+  );
+  const filterForm = document.getElementById("filterForm");
+  const filterInput = /** @type {HTMLInputElement | null} */ (
+    document.getElementById("filterInput")
+  );
+  const pageRole = /** @type {UserRole | undefined} */ (
+    /** @type {HTMLElement} */ (document.body).dataset.role
+  );
+
+  if (!tableBody || !requestRowTemplate || !filterForm || !filterInput || !pageRole) {
+    return;
+  }
+
+  const currentUser = requireAuth(pageRole);
+  if (!currentUser) return;
+
+  /** @type {(requests: ServiceRequest[]) => void} */
+  const renderRequestsTable = (requests) => {
+    tableBody.innerHTML = "";
+
+    requests.forEach((request) => {
+      const row = cloneTemplate(requestRowTemplate, {
+        title: request.title,
+        priority: request.priority,
+        status: request.status,
+        created_at: request.created_at,
+      });
+
+      const link = /** @type {HTMLAnchorElement | null} */ (
+        row.querySelector('[data-field="link"]')
+      );
+      if (link) {
+        link.href = `./request-detail.html?id=${encodeURIComponent(request.id)}`;
+      }
+
+      tableBody.appendChild(row);
+    });
+  };
+
+  // GET /api/requests is already scoped server-side to the caller's role
+  // (admin sees all, engineer sees their assignments, client sees their
+  // own), so this one call is correct for every dashboard.
+  let allRequests = /** @type {ServiceRequest[]} */ ([]);
+
+  api
+    .getRequests()
+    .then((requests) => {
+      allRequests = requests;
+      renderRequestsTable(allRequests);
+    })
+    .catch((err) => {
+      tableBody.innerHTML = `<tr><td colspan="5">${describeError(err)}</td></tr>`;
+    });
+
+  filterForm.addEventListener("submit", function (event) {
+    event.preventDefault();
+
+    const selectedStatus = filterInput.value.toLowerCase();
+    const requestsToShow =
+      selectedStatus === "all"
+        ? allRequests
+        : allRequests.filter(
+            (request) => request.status.toLowerCase() === selectedStatus,
+          );
+
+    renderRequestsTable(requestsToShow);
+  });
+})();
+
+// --- Add request (add-request.html) -----------------------------------
+
+(function initAddRequestPage() {
+  const addRequestForm = /** @type {HTMLFormElement | null} */ (
+    document.getElementById("add-request-form")
+  );
+  if (!addRequestForm) return;
+
+  if (!requireAuth("client")) return;
+
+  addRequestForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+
+    // Read by id, not addRequestForm.title: every HTMLElement already has
+    // its own title IDL attribute (tooltip text), which shadows a child
+    // input named "title".
+    const titleInput = /** @type {HTMLInputElement} */ (
+      document.getElementById("title")
+    );
+
+    try {
+      // No client_id in this payload — the server reads the owner from
+      // the caller's token, it doesn't trust the client to say who they are.
+      await api.createRequest({
         title: titleInput.value,
         description: addRequestForm.description.value,
-        priority: addRequestForm.priority.value,
+        priority: /** @type {ServiceRequestPriority} */ (
+          addRequestForm.priority.value
+        ),
       });
-
       window.location.href = "./index-client.html";
-    });
-  }
-}
+    } catch (err) {
+      alert(describeError(err));
+    }
+  });
+})();
 
-// --- Request detail (request-detail.html) --------------------------------
+// --- Request detail (request-detail.html) ------------------------------
 
-const requestInfo = document.getElementById("request-info");
+(function initRequestDetailPage() {
+  const requestInfo = document.getElementById("request-info");
+  if (!requestInfo) return;
 
-if (requestInfo) {
   const currentUser = requireAuth();
+  if (!currentUser) return;
 
-  if (currentUser) {
-    const homeLink = document.getElementById("homeLink");
-    if (homeLink instanceof HTMLAnchorElement) {
-      homeLink.href = ROLE_HOME[currentUser.role];
+  const homeLink = document.getElementById("homeLink");
+  if (homeLink instanceof HTMLAnchorElement) {
+    homeLink.href = ROLE_HOME[currentUser.role];
+  }
+
+  const requestId = /** @type {string} */ (
+    new URLSearchParams(window.location.search).get("id")
+  );
+  const statusHistoryList = document.getElementById("status-history");
+  const statusControls = document.getElementById("status-controls");
+  const commentsList = document.getElementById("comments-list");
+  const addCommentForm = /** @type {HTMLFormElement | null} */ (
+    document.getElementById("add-comment-form")
+  );
+  const internalCommentLabel = document.getElementById(
+    "internal-comment-label",
+  );
+  const assignmentSection = document.getElementById("assignment-section");
+  const assignEngineerForm = /** @type {HTMLFormElement | null} */ (
+    document.getElementById("assign-engineer-form")
+  );
+  const assignEngineerSelect = /** @type {HTMLSelectElement | null} */ (
+    document.getElementById("assign-engineer-select")
+  );
+  const deleteRequestButton = document.getElementById(
+    "delete-request-button",
+  );
+
+  // Only clients need this hidden — everyone else may leave internal notes.
+  if (internalCommentLabel && currentUser.role === "client") {
+    internalCommentLabel.style.display = "none";
+  }
+
+  // Only an admin can assign engineers, so everyone else loses the whole
+  // section instead of just seeing a form that would 403 on submit.
+  if (assignmentSection) {
+    if (currentUser.role === "admin") {
+      api
+        .getEngineers()
+        .then((engineers) => {
+          engineers.forEach((engineer) => {
+            const option = document.createElement("option");
+            option.value = engineer.id;
+            option.textContent = engineer.name;
+            assignEngineerSelect?.appendChild(option);
+          });
+        })
+        .catch((err) => alert(describeError(err)));
+    } else {
+      assignmentSection.style.display = "none";
     }
+  }
 
-    const params = new URLSearchParams(window.location.search);
-    const requestId = /** @type {string} */ (params.get("id"));
-    const statusHistoryList = document.getElementById("status-history");
-    const statusControls = document.getElementById("status-controls");
-    const commentsList = document.getElementById("comments-list");
-    const addCommentForm = /** @type {HTMLFormElement | null} */ (
-      document.getElementById("add-comment-form")
-    );
-    const internalCommentLabel = document.getElementById(
-      "internal-comment-label",
-    );
-    const assignmentSection = document.getElementById("assignment-section");
-    const assignEngineerForm = /** @type {HTMLFormElement | null} */ (
-      document.getElementById("assign-engineer-form")
-    );
-    const assignEngineerSelect = /** @type {HTMLSelectElement | null} */ (
-      document.getElementById("assign-engineer-select")
-    );
+  if (deleteRequestButton) {
+    if (currentUser.role !== "admin") {
+      deleteRequestButton.remove();
+    } else {
+      deleteRequestButton.addEventListener("click", async function () {
+        if (!confirm("Delete this request? This cannot be undone.")) return;
 
-    if (internalCommentLabel && currentUser.role === "client") {
-      internalCommentLabel.style.display = "none";
-    }
-
-    if (assignmentSection) {
-      if (currentUser.role === "admin") {
-        storage.getEngineers().forEach((engineer) => {
-          const option = document.createElement("option");
-          option.value = engineer.id;
-          option.textContent = engineer.name;
-          assignEngineerSelect?.appendChild(option);
-        });
-      } else {
-        assignmentSection.style.display = "none";
-      }
-    }
-
-    /** @type {() => void} */
-    const renderComments = () => {
-      if (!commentsList) return;
-      commentsList.innerHTML = "";
-      const includeInternal = currentUser.role !== "client";
-      const comments = storage.getCommentsForRequest(requestId, {
-        includeInternal,
+        try {
+          await api.deleteRequest(requestId);
+          window.location.href = ROLE_HOME[currentUser.role];
+        } catch (err) {
+          alert(describeError(err));
+        }
       });
+    }
+  }
+
+  // The functions below read `currentUser`/`requestInfo`, so they're
+  // `const name = () => {...}` rather than `function name() {...}` — see
+  // the note by renderUserList (in initClientListPage, above) for why.
+
+  /**
+   * Comment authors and the assigned engineer are shown by id, not name,
+   * everywhere on this page: resolving a name needs GET /api/users/:id,
+   * which clients aren't allowed to call. Showing a name to some viewers
+   * and an error to others would be worse than showing the id to everyone.
+   * @type {() => Promise<void>}
+   */
+  const renderComments = async () => {
+    if (!commentsList) return;
+
+    try {
+      const comments = await api.getCommentsForRequest(requestId);
+      commentsList.innerHTML = "";
 
       comments.forEach((comment) => {
-        const author = storage.getUserById(comment.user_id);
         const li = document.createElement("li");
-        // textContent (not innerHTML): no escaping needed, safe by construction.
-        li.textContent = `${author ? author.name : "Unknown"}${
-          comment.is_internal ? " (internal)" : ""
-        }: ${comment.content} - ${comment.created_at}`;
+        li.textContent = `${comment.author_id}${
+          comment.visibility === "internal" ? " (internal)" : ""
+        }: ${comment.body} - ${comment.created_at}`;
         commentsList.appendChild(li);
       });
+    } catch (err) {
+      commentsList.innerHTML = `<li>${describeError(err)}</li>`;
+    }
+  };
+
+  /** @type {() => void} */
+  const showRequestNotFound = () => {
+    requestInfo.innerHTML = "<p>Request not found.</p>";
+    if (statusHistoryList) statusHistoryList.innerHTML = "";
+    if (statusControls) statusControls.innerHTML = "";
+    if (commentsList) commentsList.innerHTML = "";
+  };
+
+  /**
+   * @param {ServiceRequest} request
+   * @returns {void}
+   */
+  function renderRequestFields(request) {
+    /** @type {(id: string, text: string) => void} */
+    const setText = (id, text) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
     };
 
-    /** @type {() => void} */
-    const clearRequestDetailPanels = () => {
-      requestInfo.innerHTML = "<p>Request not found.</p>";
-      if (statusHistoryList) statusHistoryList.innerHTML = "";
-      if (statusControls) statusControls.innerHTML = "";
-      if (commentsList) commentsList.innerHTML = "";
-    };
-
-    /**
-     * Fills in the read-only detail fields and the engineer-assignment select.
-     * @param {ServiceRequest} request
-     * @returns {void}
-     */
-    function renderRequestFields(request) {
-      /** @type {(id: string, text: string) => void} */
-      const setText = (id, text) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = text;
-      };
-
-      setText("request-title", request.title);
-      setText("request-description", request.description);
-      setText("request-priority", request.priority);
-      setText("request-status", request.status);
-      setText("request-created", request.created_at);
-
-      const assignment = storage.getAssignmentForRequest(request.id);
-      const assignedEngineer = assignment
-        ? storage.getUserById(assignment.engineer_id)
-        : null;
-      setText(
-        "request-assigned-engineer",
-        assignedEngineer ? assignedEngineer.name : "Unassigned",
-      );
-      if (assignEngineerSelect) {
-        assignEngineerSelect.value = assignment ? assignment.engineer_id : "";
-      }
+    setText("request-title", request.title);
+    setText("request-description", request.description);
+    setText("request-priority", request.priority);
+    setText("request-status", request.status);
+    setText("request-created", request.created_at);
+    setText(
+      "request-assigned-engineer",
+      request.assigned_engineer_id || "Unassigned",
+    );
+    if (assignEngineerSelect) {
+      assignEngineerSelect.value = request.assigned_engineer_id || "";
     }
-
-    /**
-     * @param {StatusHistoryEntry[] | undefined} statusHistory
-     * @returns {void}
-     */
-    function renderStatusHistory(statusHistory) {
-      if (!statusHistoryList) return;
-      statusHistoryList.innerHTML = "";
-      (statusHistory || []).forEach((entry) => {
-        const li = document.createElement("li");
-        li.textContent = `${entry.status} - ${entry.at}`;
-        statusHistoryList.appendChild(li);
-      });
-    }
-
-    /**
-     * Whether the current user is allowed to change a request's status.
-     * @type {() => boolean}
-     */
-    const canEditStatus = () => currentUser.role !== "client";
-
-    /**
-     * Statuses `currentStatus` may legally transition to.
-     * @param {RequestStatus} currentStatus
-     * @returns {RequestStatus[]}
-     */
-    function getAvailableNextStatuses(currentStatus) {
-      return ALL_STATUSES.filter((status) =>
-        storage.canTransition(currentStatus, status),
-      );
-    }
-
-    /**
-     * @param {RequestStatus} currentStatus
-     * @returns {void}
-     */
-    function renderStatusControls(currentStatus) {
-      if (!statusControls) return;
-      statusControls.innerHTML = "";
-      if (!canEditStatus()) return;
-
-      getAvailableNextStatuses(currentStatus).forEach((status) => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.textContent = `Move to ${status}`;
-        button.dataset.status = status;
-        statusControls.appendChild(button);
-      });
-    }
-
-    /** @type {() => void} */
-    const renderRequest = () => {
-      const request = storage.getRequestById(requestId);
-
-      if (!request) {
-        clearRequestDetailPanels();
-        return;
-      }
-
-      renderRequestFields(request);
-      renderStatusHistory(request.status_history);
-      renderStatusControls(request.status);
-      renderComments();
-    };
-
-    // Event delegation: the status buttons above are recreated on every render, so a single listener on their stable parent avoids re-attaching one listener per button on every status change.
-    if (statusControls) {
-      statusControls.addEventListener("click", function (event) {
-        const button = /** @type {HTMLElement} */ (event.target).closest(
-          "button[data-status]",
-        );
-        if (!button || !(button instanceof HTMLElement)) return;
-
-        const status = /** @type {RequestStatus} */ (button.dataset.status);
-        storage.updateRequestStatus(requestId, status);
-        renderRequest();
-      });
-    }
-
-    if (assignEngineerForm && currentUser.role === "admin") {
-      assignEngineerForm.addEventListener("submit", function (event) {
-        event.preventDefault();
-        if (!assignEngineerSelect) return;
-
-        const engineerId = assignEngineerSelect.value;
-        if (!engineerId) return;
-
-        storage.assignRequest({
-          request_id: requestId,
-          engineer_id: engineerId,
-        });
-        renderRequest();
-      });
-    }
-
-    if (addCommentForm) {
-      addCommentForm.addEventListener("submit", function (event) {
-        event.preventDefault();
-
-        const content = addCommentForm.content.value.trim();
-        if (!content) return;
-
-        const isInternal =
-          currentUser.role !== "client" && addCommentForm.is_internal.checked;
-
-        storage.addComment({
-          request_id: requestId,
-          user_id: currentUser.id,
-          content,
-          is_internal: isInternal,
-        });
-
-        addCommentForm.reset();
-        renderComments();
-      });
-    }
-
-    renderRequest();
   }
-}
 
-// --- User detail (detail-users.html) --------------------------------------
+  /**
+   * @param {StatusHistoryEntry[] | undefined} statusHistory
+   * @returns {void}
+   */
+  function renderStatusHistory(statusHistory) {
+    if (!statusHistoryList) return;
+    statusHistoryList.innerHTML = "";
+    (statusHistory || []).forEach((entry) => {
+      const li = document.createElement("li");
+      li.textContent = `${entry.status} - ${entry.at}`;
+      statusHistoryList.appendChild(li);
+    });
+  }
 
-const userProfile = document.querySelector(".user-profile");
+  /**
+   * What `currentStatus` may legally change to, for the current user's
+   * role. This mirrors the backend's exact rules
+   * (request.controller.ts::updateRequestStatus) instead of a generic
+   * state machine: clients can never change status, engineers may only
+   * resolve an open request and nothing else, admins may set any status.
+   * @type {(currentStatus: RequestStatus) => RequestStatus[]}
+   */
+  const getAvailableNextStatuses = (currentStatus) => {
+    if (currentUser.role === "admin") {
+      return ALL_STATUSES.filter((status) => status !== currentStatus);
+    }
+    if (currentUser.role === "engineer") {
+      return currentStatus === "open" ? ["resolved"] : [];
+    }
+    return [];
+  };
 
-if (userProfile) {
-  const currentUser = requireAuth(["admin", "engineer"]);
+  /**
+   * @param {RequestStatus} currentStatus
+   * @returns {void}
+   */
+  function renderStatusControls(currentStatus) {
+    if (!statusControls) return;
+    statusControls.innerHTML = "";
 
-  if (currentUser) {
-    const homeLink = document.getElementById("homeLink");
-    if (homeLink instanceof HTMLAnchorElement) {
-      homeLink.href = ROLE_HOME[currentUser.role];
+    getAvailableNextStatuses(currentStatus).forEach((status) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = `Move to ${status}`;
+      button.dataset.status = status;
+      statusControls.appendChild(button);
+    });
+  }
+
+  /** @type {() => Promise<void>} */
+  const renderRequest = async () => {
+    let request;
+    try {
+      request = await api.getRequestById(requestId);
+    } catch {
+      showRequestNotFound();
+      return;
     }
 
-    const params = new URLSearchParams(window.location.search);
-    const userId = /** @type {string} */ (params.get("id"));
+    renderRequestFields(request);
+    renderStatusHistory(request.status_history);
+    renderStatusControls(request.status);
+    await renderComments();
+  };
 
-    const requestsSection = document.getElementById("user-requests-section");
-    const requestsList = document.getElementById("user-requests-list");
-    const adminSection = document.getElementById("user-admin-actions");
-    const editUserForm = /** @type {HTMLFormElement | null} */ (
-      document.getElementById("edit-user-form")
-    );
-    const deleteUserButton = document.getElementById("delete-user-button");
-    const userRequestRowTemplate = /** @type {HTMLTemplateElement | null} */ (
-      document.getElementById("user-request-row-template")
-    );
-    // Read/write these fields by id, not editUserForm.name/.role
-    const editUserNameInput = /** @type {HTMLInputElement | null} */ (
-      document.getElementById("edit-user-name")
-    );
-    const editUserRoleSelect = /** @type {HTMLSelectElement | null} */ (
-      document.getElementById("edit-user-role")
-    );
+  // One listener on the buttons' stable parent instead of one per button,
+  // since the buttons themselves are thrown away and rebuilt on every render.
+  if (statusControls) {
+    statusControls.addEventListener("click", async function (event) {
+      const button = /** @type {HTMLElement} */ (event.target).closest(
+        "button[data-status]",
+      );
+      // The instanceof check isn't just a null guard: .closest() returns
+      // a plain Element, and .dataset below needs the more specific
+      // HTMLElement to type-check.
+      if (!button || !(button instanceof HTMLElement)) return;
 
-    if (currentUser.role !== "admin" && adminSection) {
-      adminSection.remove();
-    }
+      const status = /** @type {RequestStatus} */ (button.dataset.status);
 
-    /**
-     * @param {User} user
-     * @returns {void}
-     */
-    function renderUserRequests(user) {
-      if (!requestsList || !requestsSection || !userRequestRowTemplate) return;
-      requestsList.innerHTML = "";
-
-      let requests = /** @type {ServiceRequest[]} */ ([]);
-      if (user.role === "client")
-        requests = storage.getRequestsForClient(user.id);
-      else if (user.role === "engineer")
-        requests = storage.getRequestsForEngineer(user.id);
-
-      if (!requests.length) {
-        requestsSection.style.display = "none";
-        return;
+      try {
+        await api.updateRequestStatus(requestId, status);
+        await renderRequest();
+      } catch (err) {
+        alert(describeError(err));
       }
+    });
+  }
 
-      requestsSection.style.display = "";
-      requests.forEach((request) => {
-        const row = cloneTemplate(userRequestRowTemplate, {
-          title: request.title,
-          description: request.description,
-          priority: request.priority,
-          status: request.status,
+  if (assignEngineerForm && currentUser.role === "admin") {
+    assignEngineerForm.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      if (!assignEngineerSelect) return;
+
+      const engineerId = assignEngineerSelect.value;
+      if (!engineerId) return;
+
+      try {
+        await api.assignEngineer(requestId, engineerId);
+        await renderRequest();
+      } catch (err) {
+        alert(describeError(err));
+      }
+    });
+  }
+
+  if (addCommentForm) {
+    addCommentForm.addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      const content = addCommentForm.content.value.trim();
+      if (!content) return;
+
+      const isInternal =
+        currentUser.role !== "client" && addCommentForm.is_internal.checked;
+
+      try {
+        await api.addComment(requestId, {
+          body: content,
+          visibility: isInternal ? "internal" : "public",
         });
+        addCommentForm.reset();
+        await renderComments();
+      } catch (err) {
+        alert(describeError(err));
+      }
+    });
+  }
 
-        const link = /** @type {HTMLAnchorElement | null} */ (
-          row.querySelector('[data-field="link"]')
-        );
-        if (link) {
-          link.href = `./request-detail.html?id=${encodeURIComponent(request.id)}`;
-        }
+  renderRequest();
+})();
 
-        requestsList.appendChild(row);
+// --- User detail (detail-users.html) ------------------------------------
+
+(function initUserDetailPage() {
+  const userProfile = document.querySelector(".user-profile");
+  if (!userProfile) return;
+
+  const currentUser = requireAuth(["admin", "engineer"]);
+  if (!currentUser) return;
+
+  const homeLink = document.getElementById("homeLink");
+  if (homeLink instanceof HTMLAnchorElement) {
+    homeLink.href = ROLE_HOME[currentUser.role];
+  }
+
+  const userId = /** @type {string} */ (
+    new URLSearchParams(window.location.search).get("id")
+  );
+  const requestsSection = document.getElementById("user-requests-section");
+  const requestsList = document.getElementById("user-requests-list");
+  const adminSection = document.getElementById("user-admin-actions");
+  const editUserForm = /** @type {HTMLFormElement | null} */ (
+    document.getElementById("edit-user-form")
+  );
+  const deleteUserButton = document.getElementById("delete-user-button");
+  const userRequestRowTemplate = /** @type {HTMLTemplateElement | null} */ (
+    document.getElementById("user-request-row-template")
+  );
+  // Read/write these fields by id, not editUserForm.name/.role — same
+  // IDL-attribute shadowing as the add-user form above.
+  const editUserNameInput = /** @type {HTMLInputElement | null} */ (
+    document.getElementById("edit-user-name")
+  );
+  const editUserRoleSelect = /** @type {HTMLSelectElement | null} */ (
+    document.getElementById("edit-user-role")
+  );
+
+  if (currentUser.role !== "admin" && adminSection) {
+    adminSection.remove();
+  }
+
+  // These read `currentUser`/`userProfile`, so they're `const name = () =>
+  // {}` rather than `function name() {}` — see the note by renderUserList
+  // (in initClientListPage, near the top of this file) for why.
+
+  /**
+   * Only an admin's request list is complete enough to filter by an
+   * arbitrary user's id — GET /api/requests is scoped to the caller for
+   * every other role, so an engineer looking at someone else's profile
+   * has no backend call that could honestly fill this in.
+   * @type {(user: User) => Promise<void>}
+   */
+  const renderUserRequests = async (user) => {
+    if (!requestsList || !requestsSection || !userRequestRowTemplate) return;
+
+    const viewerCanSeeTheseRequests =
+      currentUser.role === "admin" &&
+      (user.role === "client" || user.role === "engineer");
+    if (!viewerCanSeeTheseRequests) {
+      requestsSection.style.display = "none";
+      return;
+    }
+
+    let allRequests;
+    try {
+      allRequests = await api.getRequests();
+    } catch {
+      requestsSection.style.display = "none";
+      return;
+    }
+
+    const requests = allRequests.filter((request) =>
+      user.role === "client"
+        ? request.client_id === user.id
+        : request.assigned_engineer_id === user.id,
+    );
+
+    if (!requests.length) {
+      requestsSection.style.display = "none";
+      return;
+    }
+
+    requestsSection.style.display = "";
+    requestsList.innerHTML = "";
+    requests.forEach((request) => {
+      const row = cloneTemplate(userRequestRowTemplate, {
+        title: request.title,
+        description: request.description,
+        priority: request.priority,
+        status: request.status,
       });
-    }
 
-    /** @returns {void} */
-    function renderUser() {
-      if (!currentUser) return;
-      const user = storage.getUserById(userId);
-
-      if (!user) {
-        if (userProfile) userProfile.innerHTML = "<p>User not found.</p>";
-        if (adminSection) adminSection.remove();
-        return;
+      const link = /** @type {HTMLAnchorElement | null} */ (
+        row.querySelector('[data-field="link"]')
+      );
+      if (link) {
+        link.href = `./request-detail.html?id=${encodeURIComponent(request.id)}`;
       }
 
-      /** @type {(id: string, text: string) => void} */
-      const setText = (id, text) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = text;
-      };
+      requestsList.appendChild(row);
+    });
+  };
 
-      setText("id-user", user.id);
-      setText("name-user", user.name);
-      setText("email-user", user.email);
-      setText("role-user", user.role);
-      setText("account-user", user.is_active ? "Active" : "Inactive");
-
-      renderUserRequests(user);
-
-      if (
-        editUserForm &&
-        currentUser.role === "admin" &&
-        editUserNameInput &&
-        editUserRoleSelect
-      ) {
-        editUserNameInput.value = user.name;
-        editUserForm.email.value = user.email;
-        editUserRoleSelect.value = user.role;
-        editUserForm.is_active.checked = user.is_active;
-      }
+  /** @type {() => Promise<void>} */
+  const renderUser = async () => {
+    let user;
+    try {
+      user = await api.getUserById(userId);
+    } catch {
+      userProfile.innerHTML = "<p>User not found.</p>";
+      if (adminSection) adminSection.remove();
+      return;
     }
 
-    if (editUserForm) {
-      editUserForm.addEventListener("submit", function (event) {
-        event.preventDefault();
-        if (!editUserNameInput || !editUserRoleSelect) return;
+    /** @type {(id: string, text: string) => void} */
+    const setText = (id, text) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    };
 
-        storage.updateUser(userId, {
+    setText("id-user", user.id);
+    setText("name-user", user.name);
+    setText("email-user", user.email);
+    setText("role-user", user.role);
+    setText("account-user", user.is_active ? "Active" : "Inactive");
+
+    await renderUserRequests(user);
+
+    if (
+      editUserForm &&
+      currentUser.role === "admin" &&
+      editUserNameInput &&
+      editUserRoleSelect
+    ) {
+      editUserNameInput.value = user.name;
+      editUserForm.email.value = user.email;
+      editUserRoleSelect.value = user.role;
+      editUserForm.is_active.checked = user.is_active;
+    }
+  };
+
+  if (editUserForm) {
+    editUserForm.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      if (!editUserNameInput || !editUserRoleSelect) return;
+
+      try {
+        await api.updateUser(userId, {
           name: editUserNameInput.value,
           email: editUserForm.email.value,
           role: /** @type {UserRole} */ (editUserRoleSelect.value),
           is_active: editUserForm.is_active.checked,
         });
-
-        renderUser();
-      });
-    }
-
-    if (deleteUserButton) {
-      deleteUserButton.addEventListener("click", function () {
-        if (userId === currentUser.id) {
-          alert("You cannot delete your own account.");
-          return;
-        }
-
-        storage.deleteUser(userId);
-        window.location.href = "./client-list.html";
-      });
-    }
-
-    renderUser();
+        await renderUser();
+      } catch (err) {
+        alert(describeError(err));
+      }
+    });
   }
-}
+
+  if (deleteUserButton) {
+    deleteUserButton.addEventListener("click", async function () {
+      if (userId === currentUser.id) {
+        alert("You cannot delete your own account.");
+        return;
+      }
+
+      try {
+        await api.deleteUser(userId);
+        window.location.href = "./client-list.html";
+      } catch (err) {
+        alert(describeError(err));
+      }
+    });
+  }
+
+  renderUser();
+})();
