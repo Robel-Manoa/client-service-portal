@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="../styles/styles.css" />
     <title>Client service portal</title>
-    <script src="../data/data.js" defer></script>
-    <script src="../script/storage.js" defer></script>
+    <script src="../script/api.js" defer></script>
     <script src="../script/app.js" defer></script>
   </head>
   <body data-role="client">
@@ -27,6 +26,7 @@
           name="title"
           id="title"
           required
+          minlength="5"
           placeholder="Enter request title"
         />
         <label for="priority">Priority</label>
@@ -40,6 +40,8 @@
         <textarea
           name="description"
           id="description"
+          required
+          minlength="10"
           placeholder="Enter request description"
         ></textarea>
         <button type="submit">Submit</button>
