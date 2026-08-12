@@ -60,13 +60,16 @@ jobs:
         working-directory: server-client-service-portal
         run: npm run db:init
 
-      - name: Run backend tests
+      - name: Run backend tests with coverage
         working-directory: server-client-service-portal
-        run: npm test
+        run: npm run test:coverage
 
       - name: Build backend
         working-directory: server-client-service-portal
         run: npm run build
+
+      - name: Make coverage paths match sonar.sources
+        run: sed -i 's|^SF:|SF:server-client-service-portal/|' server-client-service-portal/coverage/lcov.info
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8.1.0
