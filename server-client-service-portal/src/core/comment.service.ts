@@ -2,7 +2,7 @@ import { CommentVisibility, RequestComment } from "./types";
 import { generateId } from "./id.util";
 import { formatDate } from "./date.util";
 import type { CommentRepository } from "./ports";
-import { commentRepository as defaultComments } from "./in-memory.repositories";
+import { commentRepository as defaultComments } from "./postgres.repositories";
 
 export class CommentService {
   private static formatComment(comment: RequestComment): RequestComment {

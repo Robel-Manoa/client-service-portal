@@ -1,6 +1,7 @@
-// Not wired into the running app yet — app.ts/server.ts still run on the
-// in-memory store in core/database.ts. So far only the Postgres-backed
-// service layer under src/services (and its tests) uses this pool.
+// The app's storage layer: core/postgres.repositories.ts (the default
+// UserRepository/RequestRepository/CommentRepository injected into
+// core/*.service.ts) and the raw-SQL src/services/*.ts layer both query
+// through this pool.
 import pg from "pg";
 import { env } from "../config/env.config";
 

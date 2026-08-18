@@ -13,6 +13,12 @@ import { dbPool } from "../src/db/postgres";
 
 let client: PoolClient;
 
+// Requests created by tests in this file, so the ROLLBACK test can check
+// specifically for these instead of assuming the whole table is empty —
+// seed data and other test files' requests legitimately live in the same
+// table now that app.ts also runs on Postgres (see core/postgres.repositories.ts).
+const createdRequestIds: string[] = [];
+
 beforeEach(async () => {
   client = await dbPool.connect();
   await client.query("BEGIN");
@@ -62,12 +68,15 @@ test("create() creates a request and returns client info via the join", async ()
   assert.equal(request.client_name, testClient.name);
   assert.equal(request.client_email, testClient.email);
   assert.equal(request.engineer_name, null);
+
+  createdRequestIds.push(request.id);
 });
 
 test("findAll() returns every request", async () => {
   const testClient = await createTestUser("client");
+  const baseline = await RequestService.findAll(undefined, client);
 
-  await RequestService.create(
+  const request1 = await RequestService.create(
     {
       id: generateId(),
       title: "Request 1",
@@ -77,7 +86,7 @@ test("findAll() returns every request", async () => {
     },
     client,
   );
-  await RequestService.create(
+  const request2 = await RequestService.create(
     {
       id: generateId(),
       title: "Request 2",
@@ -87,17 +96,23 @@ test("findAll() returns every request", async () => {
     },
     client,
   );
+  createdRequestIds.push(request1.id, request2.id);
 
   const results = await RequestService.findAll(undefined, client);
+  const resultIds = results.map((r) => r.id);
 
-  assert.equal(results.length, 2);
+  // Baseline (seed data + whatever's already committed) plus these two —
+  // not an exact total, since other tables/files legitimately share this DB now.
+  assert.equal(results.length, baseline.length + 2);
+  assert.ok(resultIds.includes(request1.id));
+  assert.ok(resultIds.includes(request2.id));
 });
 
 test("findAll() filters by client_id", async () => {
   const clientA = await createTestUser("client");
   const clientB = await createTestUser("client");
 
-  await RequestService.create(
+  const requestA = await RequestService.create(
     {
       id: generateId(),
       title: "Request from A",
@@ -107,7 +122,7 @@ test("findAll() filters by client_id", async () => {
     },
     client,
   );
-  await RequestService.create(
+  const requestB = await RequestService.create(
     {
       id: generateId(),
       title: "Request from B",
@@ -117,6 +132,7 @@ test("findAll() filters by client_id", async () => {
     },
     client,
   );
+  createdRequestIds.push(requestA.id, requestB.id);
 
   const results = await RequestService.findAll(
     { client_id: clientA.id },
@@ -147,7 +163,7 @@ test("findAll() filters by assigned engineer", async () => {
     client,
   );
 
-  await RequestService.create(
+  const unassigned = await RequestService.create(
     {
       id: generateId(),
       title: "Unassigned request",
@@ -157,6 +173,7 @@ test("findAll() filters by assigned engineer", async () => {
     },
     client,
   );
+  createdRequestIds.push(assigned.id, unassigned.id);
 
   const results = await RequestService.findAll(
     { assigned_engineer_id: engineer.id },
@@ -180,6 +197,8 @@ test("findById() returns an existing request", async () => {
     },
     client,
   );
+
+  createdRequestIds.push(created.id);
 
   const found = await RequestService.findById(created.id, client);
 
@@ -206,6 +225,8 @@ test("update() changes a request's status", async () => {
     client,
   );
 
+  createdRequestIds.push(created.id);
+
   const updated = await RequestService.update(
     created.id,
     { status: "resolved" },
@@ -228,6 +249,8 @@ test("update() with no changes returns the request as-is (findById path)", async
     client,
   );
 
+  createdRequestIds.push(created.id);
+
   const result = await RequestService.update(created.id, {}, client);
 
   assert.equal(result?.id, created.id);
@@ -236,11 +259,18 @@ test("update() with no changes returns the request as-is (findById path)", async
 });
 
 test("ROLLBACK leaves no trace between tests", async () => {
-  // If any earlier ROLLBACK had failed, this list wouldn't be empty.
+  // Checks specifically for the requests created by earlier tests in this
+  // file — not that the table is globally empty, since seed data and other
+  // test files' requests legitimately live here too (app.ts now runs on
+  // Postgres as well, see core/postgres.repositories.ts). If any earlier
+  // ROLLBACK had failed, one of these ids would still turn up.
   const results = await RequestService.findAll(undefined, client);
-  assert.equal(
-    results.length,
-    0,
-    "no request should survive from one test to the next",
-  );
+  const survivingIds = new Set(results.map((r) => r.id));
+
+  for (const id of createdRequestIds) {
+    assert.ok(
+      !survivingIds.has(id),
+      `request ${id} should not have survived its test's ROLLBACK`,
+    );
+  }
 });

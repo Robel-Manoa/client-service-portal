@@ -2,7 +2,7 @@ import { ServiceRequest, RequestPriority, RequestStatus } from "./types";
 import { generateId } from "./id.util";
 import { formatDate } from "./date.util";
 import type { RequestRepository } from "./ports";
-import { requestRepository as defaultRequests } from "./in-memory.repositories";
+import { requestRepository as defaultRequests } from "./postgres.repositories";
 
 export class RequestService {
   // Mirrors UserService.sanitizeUser: storage stays ISO 8601, formatting

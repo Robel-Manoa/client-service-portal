@@ -5,7 +5,7 @@ import { env } from "../config/env.config";
 import { generateId } from "./id.util";
 import { formatDate } from "./date.util";
 import type { UserRepository } from "./ports";
-import { userRepository as defaultUsers } from "./in-memory.repositories";
+import { userRepository as defaultUsers } from "./postgres.repositories";
 
 const SALT_ROUNDS = 10; // bcrypt's recommended default
 

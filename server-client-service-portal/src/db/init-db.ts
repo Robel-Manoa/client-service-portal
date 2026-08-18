@@ -5,6 +5,7 @@ import path from "node:path";
 import pg from "pg";
 import { dbPool } from "./postgres";
 import { env } from "../config/env.config";
+import { seedDatabase } from "./seed";
 
 const schemaSQL = fs.readFileSync(path.join(__dirname, "schema.sql"), "utf8");
 
@@ -51,6 +52,8 @@ async function initDatabase() {
     await ensureDatabaseExists();
     await dbPool.query(schemaSQL);
     console.log(`SQL schema applied successfully to database [${env.DB_NAME}]`);
+    await seedDatabase();
+    console.log("Demo/test fixture data seeded successfully");
   } catch (error) {
     console.error("Error while initializing the SQL schema: ", error);
     process.exitCode = 1;

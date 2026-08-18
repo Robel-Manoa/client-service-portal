@@ -129,7 +129,7 @@ The application is built entirely on a native web stack with zero external depen
 ### Backend: `server-client-service-portal/` (Express + TypeScript)
 
 A real HTTP API the frontend talks to over `fetch` — JWT bearer auth,
-role-based access control, in-memory data store. See that project's own
+role-based access control, PostgreSQL-backed data store. See that project's own
 docs/source for details; the frontend treats it as the single source of
 truth for data, ids, and validation rules and never fakes any of it
 locally.
