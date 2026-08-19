@@ -11,6 +11,9 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  // Optional, not required: UserService.sanitizeUser strips this before a
+  // user ever reaches the API response, so the same type has to describe
+  // both a freshly-loaded row (has it) and a sanitized one (doesn't).
   password?: string;
   role: UserRole;
   is_active: boolean;

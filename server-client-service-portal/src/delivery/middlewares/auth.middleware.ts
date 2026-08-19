@@ -9,6 +9,10 @@ interface JwtPayloadCustom {
   email: string;
 }
 
+// Only establishes identity (a valid token -> who's making this request);
+// deciding whether that identity is allowed to do this particular thing
+// is requireRole's job below, kept separate so routes compose the two
+// independently (e.g. "any authenticated user" vs "admins only").
 export const authenticate = (
   req: Request,
   res: Response,

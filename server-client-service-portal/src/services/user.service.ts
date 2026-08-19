@@ -24,6 +24,10 @@ export class UserService{
         return result.rows[0]||null;
     }
 
+    // Unlike findAll/create, this returns the full record — password_hash
+    // included — since a caller might legitimately need it (re-verifying a
+    // session, checking a password change). Whoever calls this is on the
+    // hook for stripping password_hash before it reaches an API response.
     static async findById(id:string, db: Queryable = dbPool): Promise<UserRecord | null>{
         const query = `SELECT id, full_name AS name, email, password_hash, role, is_active, created_at, updated_at FROM users WHERE id = $1`;
         const result = await db.query<UserRecord>(query, [id]);
@@ -44,10 +48,13 @@ export class UserService{
             const result = await db.query<Omit<UserRecord, "password_hash">>(query, values);
             return result.rows[0];
         } catch (error: any) {
-            // 23505 = unique_violation, i.e. the email's taken
+            // 23505 = unique_violation (the email's taken) — turned into a
+            // 409 here so a caller can tell "this specific input conflicts"
+            // apart from an unrelated failure, without parsing a raw
+            // Postgres error code itself.
             if (error.code === "23505") {
                 const customError = new Error("A user with this email already exists");
-                (customError as any).statusCode = 409; // HTTP 409 conflict
+                (customError as any).statusCode = 409;
                 throw customError;
             }
             throw error;

@@ -3,9 +3,23 @@ import { RequestService } from "../core/request.service";
 import { CommentService } from "../core/comment.service";
 import { UserService } from "../core/user.service";
 
-// Staff (admin/engineer) get full access to a request by ID;
-// a client only sees/edits their own.
+// Staff (admin/engineer) get treated as staff for cross-cutting things like
+// internal-comment visibility. It does NOT mean "full access to any
+// request" — engineers are further scoped to their own assignments by
+// canAccessRequest below.
 const isStaff = (role?: string) => role === "admin" || role === "engineer";
+
+// Whether `user` may view/edit this specific request at all. Admin: always.
+// Engineer: only a request assigned to them. Client: only a request they
+// own. Used everywhere a single request is read or acted on.
+const canAccessRequest = (
+  user: { id: string; role: string },
+  request: { client_id: string; assigned_engineer_id?: string },
+) => {
+  if (user.role === "admin") return true;
+  if (user.role === "engineer") return request.assigned_engineer_id === user.id;
+  return request.client_id === user.id;
+};
 
 // Client: their own requests. Engineer: requests assigned to them. Admin: everything.
 export const getAllRequests = async (req: Request, res: Response) => {
@@ -61,7 +75,7 @@ export const getRequestById = async (req: Request, res: Response) => {
     return;
   }
 
-  if (!isStaff(req.user.role) && found.client_id !== req.user.id) {
+  if (!canAccessRequest(req.user, found)) {
     res.status(403).json({ error: "Access denied" });
     return;
   }
@@ -86,10 +100,7 @@ export const updateRequest = async (req: Request, res: Response) => {
     return;
   }
 
-  const staff = isStaff(req.user.role);
-  const isOwner = existing.client_id === req.user.id;
-
-  if (!staff && !isOwner) {
+  if (!canAccessRequest(req.user, existing)) {
     res.status(403).json({ error: "Access denied" });
     return;
   }
@@ -122,6 +133,11 @@ export const updateRequestStatus = async (req: Request, res: Response) => {
     res.status(403).json({
       error: "A client cannot change a request's status",
     });
+    return;
+  }
+
+  if (!canAccessRequest(req.user, existing)) {
+    res.status(403).json({ error: "Access denied" });
     return;
   }
 
@@ -187,13 +203,12 @@ export const getComments = async (req: Request, res: Response) => {
     return;
   }
 
-  const staff = isStaff(req.user.role);
-
-  if (!staff && existing.client_id !== req.user.id) {
+  if (!canAccessRequest(req.user, existing)) {
     res.status(403).json({ error: "Access denied" });
     return;
   }
 
+  const staff = isStaff(req.user.role);
   const comments = await CommentService.listForRequest(id, staff);
   res.status(200).json(comments);
 };
@@ -212,13 +227,12 @@ export const createComment = async (req: Request, res: Response) => {
     return;
   }
 
-  const staff = isStaff(req.user.role);
-
-  if (!staff && existing.client_id !== req.user.id) {
+  if (!canAccessRequest(req.user, existing)) {
     res.status(403).json({ error: "Access denied" });
     return;
   }
 
+  const staff = isStaff(req.user.role);
   const { body, visibility } = req.body;
   // A client asking for "internal" gets silently downgraded to "public" —
   // only staff can actually create an internal note.

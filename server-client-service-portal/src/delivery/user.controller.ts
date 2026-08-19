@@ -5,6 +5,8 @@ export const loginUser = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   try {
+    // null here covers both "no such email" and "wrong password" (see
+    // UserService.login) — same generic 401 either way, on purpose.
     const result = await UserService.login(email, password);
     if (!result) {
       res.status(401).json({ error: "Invalid credentials" });
@@ -13,6 +15,10 @@ export const loginUser = async (req: Request, res: Response) => {
 
     res.status(200).json(result);
   } catch (error) {
+    // A thrown error (currently just "Account disabled") means the
+    // credentials were correct but this account specifically is blocked —
+    // a distinct 403, not the generic 401 above, so the frontend can tell
+    // the two apart.
     const message =
       error instanceof Error ? error.message : "Login failed";
     res.status(403).json({ error: message });

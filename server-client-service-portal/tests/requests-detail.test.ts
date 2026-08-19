@@ -64,20 +64,44 @@ test("GET /api/requests/:id: the owning client can view their request", async ()
   assert.equal(body.id, SEED_IDS.request1);
 });
 
-test("GET /api/requests/:id: staff (admin/engineer) can view any request", async () => {
+test("GET /api/requests/:id: an admin can view any request", async () => {
   const adminToken = await tokenFor("admin@portal.local");
-  const adminRes = await fetch(
+  const res = await fetch(
     `${baseUrl}/api/requests/${SEED_IDS.request1}`,
     authed(adminToken),
   );
-  assert.equal(adminRes.status, 200);
+  assert.equal(res.status, 200);
+});
 
-  const engineerToken = await tokenFor("robel@gmail.com");
-  const engineerRes = await fetch(
+test("GET /api/requests/:id: the assigned engineer can view it", async () => {
+  const engineerToken = await tokenFor("robel@gmail.com"); // assigned to SEED_IDS.request1
+  const res = await fetch(
     `${baseUrl}/api/requests/${SEED_IDS.request1}`,
     authed(engineerToken),
   );
-  assert.equal(engineerRes.status, 200);
+  assert.equal(res.status, 200);
+});
+
+test("GET /api/requests/:id: an engineer NOT assigned to the request is denied (403)", async () => {
+  const clientToken = await tokenFor("manoa@gmail.com");
+  const created = await fetch(
+    `${baseUrl}/api/requests`,
+    authed(clientToken, {
+      method: "POST",
+      body: JSON.stringify({
+        title: "Unassigned request for engineer GET test",
+        description: "Description long enough for Zod validation",
+        priority: "low",
+      }),
+    }),
+  ).then((r) => r.json());
+
+  const engineerToken = await tokenFor("robel@gmail.com");
+  const res = await fetch(
+    `${baseUrl}/api/requests/${created.id}`,
+    authed(engineerToken),
+  );
+  assert.equal(res.status, 403);
 });
 
 test("GET /api/requests/:id: a client who doesn't own it is denied (403)", async () => {
@@ -114,7 +138,7 @@ test("PUT /api/requests/:id: the owning client can update title/description/prio
   assert.equal(body.title, "Updated title for my request");
 });
 
-test("PUT /api/requests/:id: staff can also update it", async () => {
+test("PUT /api/requests/:id: an admin can also update it", async () => {
   const token = await tokenFor("admin@portal.local");
   const res = await fetch(
     `${baseUrl}/api/requests/${SEED_IDS.request1}`,
@@ -126,6 +150,50 @@ test("PUT /api/requests/:id: staff can also update it", async () => {
   assert.equal(res.status, 200);
   const body = await res.json();
   assert.equal(body.priority, "low");
+});
+
+test("PUT /api/requests/:id: the assigned engineer can update it", async () => {
+  const token = await tokenFor("robel@gmail.com"); // assigned to SEED_IDS.request1
+  const res = await fetch(
+    `${baseUrl}/api/requests/${SEED_IDS.request1}`,
+    authed(token, {
+      method: "PUT",
+      body: JSON.stringify({
+        description: "Updated by the assigned engineer, long enough for Zod",
+      }),
+    }),
+  );
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(
+    body.description,
+    "Updated by the assigned engineer, long enough for Zod",
+  );
+});
+
+test("PUT /api/requests/:id: an engineer NOT assigned to the request is denied (403)", async () => {
+  const clientToken = await tokenFor("manoa@gmail.com");
+  const created = await fetch(
+    `${baseUrl}/api/requests`,
+    authed(clientToken, {
+      method: "POST",
+      body: JSON.stringify({
+        title: "Unassigned request for engineer PUT test",
+        description: "Description long enough for Zod validation",
+        priority: "low",
+      }),
+    }),
+  ).then((r) => r.json());
+
+  const engineerToken = await tokenFor("robel@gmail.com");
+  const res = await fetch(
+    `${baseUrl}/api/requests/${created.id}`,
+    authed(engineerToken, {
+      method: "PUT",
+      body: JSON.stringify({ title: "Hijacked title attempt" }),
+    }),
+  );
+  assert.equal(res.status, 403);
 });
 
 test("PUT /api/requests/:id: a non-owner client is denied (403)", async () => {
