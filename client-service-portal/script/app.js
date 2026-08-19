@@ -21,6 +21,22 @@ const ALL_STATUSES = [
 ];
 
 /**
+ * RequestStatus values are snake_case because that's what the backend's
+ * Postgres enum uses — this is the one place that turns them into the
+ * natural-language labels shown to users ("in_progress" -> "In Progress").
+ * Everywhere else in this file keeps working with the raw value (dataset
+ * attributes, API payloads, filter comparisons); only display sites call this.
+ * @param {string} status
+ * @returns {string}
+ */
+function formatStatus(status) {
+  return status
+    .split("_")
+    .map((word) => word[0].toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+/**
  * Clones a <template>'s content and fills its text-only [data-field]
  * slots. Using <template> instead of building markup from string
  * interpolation keeps user-entered values (names, titles, comments, ...)
@@ -41,8 +57,11 @@ function cloneTemplate(template, fields) {
 }
 
 /**
- * Access-control gatekeeper. Redirects to the login page if no one is
- * logged in, or if the logged-in user's role isn't part of requiredRole.
+ * Every protected page calls this before touching the DOM, so a visit
+ * with no session — or the wrong role, e.g. an engineer opening
+ * client-list.html — redirects to login immediately instead of flashing
+ * real content first. Centralizing it here means each page-init function
+ * below gets this for one call instead of repeating the check itself.
  * @param {UserRole | UserRole[]} [requiredRole] a single role or list of allowed roles
  * @returns {User | null} the current user, or `null` if redirected away
  */
@@ -261,6 +280,9 @@ function removeFormEdit() {
   const filterInput = /** @type {HTMLInputElement | null} */ (
     document.getElementById("filterInput")
   );
+  const priorityFilterInput = /** @type {HTMLInputElement | null} */ (
+    document.getElementById("priorityFilterInput")
+  );
   const pageRole = /** @type {UserRole | undefined} */ (
     /** @type {HTMLElement} */ (document.body).dataset.role
   );
@@ -270,6 +292,7 @@ function removeFormEdit() {
     !requestRowTemplate ||
     !filterForm ||
     !filterInput ||
+    !priorityFilterInput ||
     !pageRole
   ) {
     return;
@@ -286,7 +309,7 @@ function removeFormEdit() {
       const row = cloneTemplate(requestRowTemplate, {
         title: request.title,
         priority: request.priority,
-        status: request.status,
+        status: formatStatus(request.status),
         created_at: request.created_at,
       });
 
@@ -316,16 +339,26 @@ function removeFormEdit() {
       alert(describeError(err));
     });
 
+  // Both filters run against allRequests (already fetched above) instead
+  // of a fresh GET /api/requests per filter change — the backend has
+  // nothing extra to tell us here since it already scoped the list to
+  // this user's role, so re-fetching would just be a slower way to filter
+  // data we already have.
   filterForm.addEventListener("submit", function (event) {
     event.preventDefault();
 
     const selectedStatus = filterInput.value.toLowerCase();
-    const requestsToShow =
-      selectedStatus === "all"
-        ? allRequests
-        : allRequests.filter(
-            (request) => request.status.toLowerCase() === selectedStatus,
-          );
+    const selectedPriority = priorityFilterInput.value.toLowerCase();
+
+    const requestsToShow = allRequests.filter((request) => {
+      const matchesStatus =
+        selectedStatus === "all" ||
+        request.status.toLowerCase() === selectedStatus;
+      const matchesPriority =
+        selectedPriority === "all" ||
+        request.priority.toLowerCase() === selectedPriority;
+      return matchesStatus && matchesPriority;
+    });
 
     renderRequestsTable(requestsToShow);
   });
@@ -519,7 +552,7 @@ function removeFormEdit() {
     setText("request-title", request.title);
     setText("request-description", request.description);
     setText("request-priority", request.priority);
-    setText("request-status", request.status);
+    setText("request-status", formatStatus(request.status));
     setText("request-created", request.created_at);
 
     let engineerName = "Unassigned";
@@ -557,7 +590,7 @@ function removeFormEdit() {
     statusHistoryList.innerHTML = "";
     (statusHistory || []).forEach((entry) => {
       const li = document.createElement("li");
-      li.textContent = `${entry.status} - ${entry.at}`;
+      li.textContent = `${formatStatus(entry.status)} - ${entry.at}`;
       statusHistoryList.appendChild(li);
     });
   }
@@ -591,7 +624,7 @@ function removeFormEdit() {
     getAvailableNextStatuses(currentStatus).forEach((status) => {
       const button = document.createElement("button");
       button.type = "button";
-      button.textContent = `Move to ${status}`;
+      button.textContent = `Move to ${formatStatus(status)}`;
       button.dataset.status = status;
       statusControls.appendChild(button);
     });
@@ -767,7 +800,7 @@ function removeFormEdit() {
         title: request.title,
         description: request.description,
         priority: request.priority,
-        status: request.status,
+        status: formatStatus(request.status),
       });
 
       const link = /** @type {HTMLAnchorElement | null} */ (
@@ -840,6 +873,9 @@ function removeFormEdit() {
 
   if (deleteUserButton) {
     deleteUserButton.addEventListener("click", async function () {
+      // The backend would allow this (an admin can delete any account,
+      // including their own) — caught here so an admin can't strand their
+      // own session mid-use, instead of finding out via a failed request.
       if (userId === currentUser.id) {
         alert("You cannot delete your own account.");
         return;

@@ -20,7 +20,11 @@ export class UserService {
     users: UserRepository = defaultUsers,
   ) {
     const user = await users.findByEmail(email);
-    if (!user) return null; // unknown user
+    // No such account and a wrong password both return null here, so the
+    // controller sends back the same generic "Invalid credentials" either
+    // way — a caller probing emails can't tell an unknown address apart
+    // from a real one with the wrong password.
+    if (!user) return null;
 
     if (!user.is_active) throw new Error("Account disabled");
 
