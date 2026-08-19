@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="../styles/styles.css" />
     <title>Client Service Portal</title>
     <script src="../script/api.js" defer></script>
+    <script src="../script/routes.js" defer></script>
     <script src="../script/app.js" defer></script>
   </head>
   <body>
@@ -25,9 +26,9 @@
 
       <template id="user-row-template">
         <ul>
+          <li class="role-badge" data-field="role"></li>
           <li data-field="name"></li>
           <li data-field="email"></li>
-          <li class="role-badge" data-field="role"></li>
           <li><a data-field="link">View details</a></li>
         </ul>
       </template>

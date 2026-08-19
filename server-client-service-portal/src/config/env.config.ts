@@ -10,14 +10,14 @@ const envSchema = z.object({
     JWT_SECRET: z.string().min(10, "JWT_SECRET must be at least 10 characters long."),
     PASSWORD_HASH: z.string().min(1, "PASSWORD_HASH is required (password for demo accounts)."),
 
-    // Postgres isn't wired into the app yet (see src/db/postgres.ts), so
-    // these have defaults instead of being required — nothing breaks while
-    // they're unused. Drop the defaults once we actually connect.
-    DB_HOST: z.string().default("localhost"),
+    // Required: the app reads/writes through this Postgres connection (see
+    // src/db/postgres.ts) — a missing var should fail fast at startup
+    // instead of the pool silently connecting to the wrong database.
+    DB_HOST: z.string().min(1, "DB_HOST is required."),
     DB_PORT: z.coerce.number().default(5432),
-    DB_USER: z.string().default("postgres"),
-    DB_PASSWORD: z.string().default("postgres"),
-    DB_NAME: z.string().default("service_portal"),
+    DB_USER: z.string().min(1, "DB_USER is required."),
+    DB_PASSWORD: z.string().min(1, "DB_PASSWORD is required."),
+    DB_NAME: z.string().min(1, "DB_NAME is required."),
 });
 
 const parsed = envSchema.safeParse(process.env);

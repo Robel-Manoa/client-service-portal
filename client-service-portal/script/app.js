@@ -11,12 +11,6 @@
  * data layer; this file only ever reads through it and manipulates the DOM.
  */
 
-const ROLE_HOME = {
-  client: "./index-client.html",
-  engineer: "./index-engineer.html",
-  admin: "./index-admin.html",
-};
-
 /** @type {RequestStatus[]} */
 const ALL_STATUSES = [
   "open",
@@ -55,7 +49,7 @@ function cloneTemplate(template, fields) {
 function requireAuth(requiredRole) {
   const user = api.getCurrentUser();
   if (!user) {
-    window.location.href = "../index.html";
+    window.location.href = ROUTES.login();
     return null;
   }
   if (requiredRole) {
@@ -63,7 +57,7 @@ function requireAuth(requiredRole) {
       ? requiredRole
       : [requiredRole];
     if (!allowedRoles.includes(user.role)) {
-      window.location.href = "../index.html";
+      window.location.href = ROUTES.login();
       return null;
     }
   }
@@ -106,7 +100,7 @@ if (loginForm) {
 
     try {
       const user = await api.login(email, password);
-      window.location.href = "pages/index-" + user.role + ".html";
+      window.location.href = ROUTES.home(user.role);
     } catch (err) {
       if (!errorMessage) return;
       errorMessage.textContent =
@@ -125,7 +119,7 @@ if (logoutButton) {
   logoutButton.addEventListener("click", function (event) {
     event.preventDefault();
     api.logout();
-    window.location.href = "../index.html";
+    window.location.href = ROUTES.login();
   });
 }
 
@@ -179,7 +173,7 @@ function removeFormEdit() {
 
   const homeLink = document.getElementById("homeLink");
   if (homeLink instanceof HTMLAnchorElement) {
-    homeLink.href = ROLE_HOME[currentUser.role];
+    homeLink.href = ROUTES.home(currentUser.role);
   }
 
   // Written as `const renderUserList = (users) => {}` rather than
@@ -212,7 +206,7 @@ function removeFormEdit() {
         row.querySelector('[data-field="link"]')
       );
       if (link) {
-        link.href = `./detail-users.html?id=${encodeURIComponent(user.id)}`;
+        link.href = ROUTES.userDetail(user.id);
       }
 
       clientsList.appendChild(row);
@@ -273,7 +267,13 @@ function removeFormEdit() {
     /** @type {HTMLElement} */ (document.body).dataset.role
   );
 
-  if (!tableBody || !requestRowTemplate || !filterForm || !filterInput || !pageRole) {
+  if (
+    !tableBody ||
+    !requestRowTemplate ||
+    !filterForm ||
+    !filterInput ||
+    !pageRole
+  ) {
     return;
   }
 
@@ -296,7 +296,7 @@ function removeFormEdit() {
         row.querySelector('[data-field="link"]')
       );
       if (link) {
-        link.href = `./request-detail.html?id=${encodeURIComponent(request.id)}`;
+        link.href = ROUTES.requestDetail(request.id);
       }
 
       tableBody.appendChild(row);
@@ -363,7 +363,7 @@ function removeFormEdit() {
           addRequestForm.priority.value
         ),
       });
-      window.location.href = "./index-client.html";
+      window.location.href = ROUTES.home("client");
     } catch (err) {
       alert(describeError(err));
     }
@@ -381,7 +381,7 @@ function removeFormEdit() {
 
   const homeLink = document.getElementById("homeLink");
   if (homeLink instanceof HTMLAnchorElement) {
-    homeLink.href = ROLE_HOME[currentUser.role];
+    homeLink.href = ROUTES.home(currentUser.role);
   }
 
   const requestId = /** @type {string} */ (
@@ -403,9 +403,7 @@ function removeFormEdit() {
   const assignEngineerSelect = /** @type {HTMLSelectElement | null} */ (
     document.getElementById("assign-engineer-select")
   );
-  const deleteRequestButton = document.getElementById(
-    "delete-request-button",
-  );
+  const deleteRequestButton = document.getElementById("delete-request-button");
 
   // Only clients need this hidden — everyone else may leave internal notes.
   if (internalCommentLabel && currentUser.role === "client") {
@@ -441,7 +439,7 @@ function removeFormEdit() {
 
         try {
           await api.deleteRequest(requestId);
-          window.location.href = ROLE_HOME[currentUser.role];
+          window.location.href = ROUTES.home(currentUser.role);
         } catch (err) {
           alert(describeError(err));
         }
@@ -454,10 +452,12 @@ function removeFormEdit() {
   // the note by renderUserList (in initClientListPage, above) for why.
 
   /**
-   * Comment authors and the assigned engineer are shown by id, not name,
-   * everywhere on this page: resolving a name needs GET /api/users/:id,
-   * which clients aren't allowed to call. Showing a name to some viewers
-   * and an error to others would be worse than showing the id to everyone.
+   * Resolving a name needs GET /api/users/:id, which clients aren't
+   * allowed to call — so a client viewer only ever gets their own name
+   * (from currentUser, no API call needed) plus a generic label for
+   * everyone else. That's safe because a client only ever sees comments
+   * on their own request, whose other authors can only be staff (never
+   * another client) — the server already enforces that ownership check.
    * @type {() => Promise<void>}
    */
   const renderComments = async () => {
@@ -467,9 +467,30 @@ function removeFormEdit() {
       const comments = await api.getCommentsForRequest(requestId);
       commentsList.innerHTML = "";
 
+      /** @type {Map<string, string>} */
+      const authorNames = new Map();
+      if (currentUser.role !== "client") {
+        const uniqueAuthorIds = [...new Set(comments.map((c) => c.author_id))];
+        await Promise.all(
+          uniqueAuthorIds.map(async (id) => {
+            try {
+              const author = await api.getUserById(id);
+              authorNames.set(id, author.name);
+            } catch {
+              authorNames.set(id, "Unknown User");
+            }
+          }),
+        );
+      }
+
       comments.forEach((comment) => {
+        const authorName =
+          comment.author_id === currentUser.id
+            ? currentUser.name
+            : authorNames.get(comment.author_id) || "Staff";
+
         const li = document.createElement("li");
-        li.textContent = `${comment.author_id}${
+        li.textContent = `${authorName}${
           comment.visibility === "internal" ? " (internal)" : ""
         }: ${comment.body} - ${comment.created_at}`;
         commentsList.appendChild(li);
@@ -488,10 +509,9 @@ function removeFormEdit() {
   };
 
   /**
-   * @param {ServiceRequest} request
-   * @returns {void}
+   * @type {(request: ServiceRequest) => Promise<void>}
    */
-  function renderRequestFields(request) {
+  const renderRequestFields = async (request) => {
     /** @type {(id: string, text: string) => void} */
     const setText = (id, text) => {
       const el = document.getElementById(id);
@@ -503,14 +523,32 @@ function removeFormEdit() {
     setText("request-priority", request.priority);
     setText("request-status", request.status);
     setText("request-created", request.created_at);
-    setText(
-      "request-assigned-engineer",
-      request.assigned_engineer_id || "Unassigned",
-    );
+
+    let engineerName = "Unassigned";
+
+    if (request.assigned_engineer_id) {
+      // GET /api/users/:id is admin/engineer-only — clients get a generic
+      // label instead of a doomed lookup that would just 403.
+      if (currentUser.role === "client") {
+        engineerName = "Assigned";
+      } else {
+        try {
+          const assignedEngineer = await api.getUserById(
+            request.assigned_engineer_id,
+          );
+          engineerName = assignedEngineer.name;
+        } catch {
+          engineerName = "Unknown Engineer";
+        }
+      }
+    }
+
+    setText("request-assigned-engineer", engineerName);
+
     if (assignEngineerSelect) {
       assignEngineerSelect.value = request.assigned_engineer_id || "";
     }
-  }
+  };
 
   /**
    * @param {StatusHistoryEntry[] | undefined} statusHistory
@@ -571,7 +609,7 @@ function removeFormEdit() {
       return;
     }
 
-    renderRequestFields(request);
+    await renderRequestFields(request);
     renderStatusHistory(request.status_history);
     renderStatusControls(request.status);
     await renderComments();
@@ -654,7 +692,7 @@ function removeFormEdit() {
 
   const homeLink = document.getElementById("homeLink");
   if (homeLink instanceof HTMLAnchorElement) {
-    homeLink.href = ROLE_HOME[currentUser.role];
+    homeLink.href = ROUTES.home(currentUser.role);
   }
 
   const userId = /** @type {string} */ (
@@ -738,7 +776,7 @@ function removeFormEdit() {
         row.querySelector('[data-field="link"]')
       );
       if (link) {
-        link.href = `./request-detail.html?id=${encodeURIComponent(request.id)}`;
+        link.href = ROUTES.requestDetail(request.id);
       }
 
       requestsList.appendChild(row);
@@ -811,7 +849,7 @@ function removeFormEdit() {
 
       try {
         await api.deleteUser(userId);
-        window.location.href = "./client-list.html";
+        window.location.href = ROUTES.clientList();
       } catch (err) {
         alert(describeError(err));
       }

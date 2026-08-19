@@ -3,10 +3,10 @@
   padding: 0;
   font-size: 1rem;
   font-family: "Times New Roman", Times, serif;
-  color: var(--color);
-  background-color: var(--background-color);
   text-decoration: none;
   list-style-type: none;
+  background-color: var(--background-color);
+  color: var(--color);
 }
 
 :root {
@@ -70,8 +70,6 @@
   border-bottom: 1px solid var(--background-color);
   margin-bottom: 20px;
   padding: 20px;
-  color: var(--background-color);
-  background-color: transparent;
 }
 
 .login-content #loginForm button {
@@ -82,7 +80,6 @@
 }
 
 .login-content #loginForm button:hover {
-  background-color: transparent;
   cursor: pointer;
   color: var(--primary-color);
   border: 1px solid var(--primary-color);
@@ -91,7 +88,6 @@
 .login-content #loginForm .error-message {
   color: var(--primary-color);
   margin-top: 20px;
-  background-color: transparent;
 }
 
 /* Login part : End */
@@ -111,22 +107,25 @@ nav {
 }
 
 nav ul {
-  background-color: transparent;
   position: relative;
   display: flex;
   justify-content: space-between;
+  background-color: var(--color);
+  border-radius: 50px;
 }
 
 nav ul li,
 nav ul li a {
-  background-color: transparent;
   padding: 5px;
   color: var(--background-color);
   transition: all 0.3s ease-in-out;
+  background-color: var(--color);
+  border-radius: 5px;
+  
 }
 
 nav ul li button {
-  background-color: var(--background-color);
+
   border: none;
   color: var(--color);
   transition: all 0.3s ease-in-out;
@@ -135,7 +134,6 @@ nav ul li button {
 }
 
 nav ul li button:hover {
-  background-color: transparent;
   cursor: pointer;
   color: var(--primary-color);
   border: 1px solid var(--primary-color);
@@ -176,7 +174,6 @@ nav ul li button:hover {
 }
 
 .body-content form button:hover {
-  background-color: transparent;
   cursor: pointer;
   color: var(--primary-color);
   border: 1px solid var(--primary-color);
@@ -200,7 +197,6 @@ nav ul li button:hover {
 
 .body-content .table-wrapper table {
   width: 100%;
-  background-color: transparent;
 }
 
 .body-content .table-wrapper table tr th {
@@ -254,7 +250,6 @@ nav ul li button:hover {
 }
 
 .body-content .dynamique-content #status-section #status-controls button:hover {
-  background-color: transparent;
   cursor: pointer;
   color: var(--primary-color);
   border: 1px solid var(--primary-color);
@@ -293,7 +288,6 @@ nav ul li button:hover {
 /* client list page : Start  */
 
 .body-content #clients-list ul {
-  background-color: var(--color);
   padding: 10px;
   margin-bottom: 20px;
   margin-right: 10px;
@@ -301,16 +295,12 @@ nav ul li button:hover {
   display: inline-block;
 }
 
-.body-content #clients-list ul li,
-.body-content #clients-list ul li a {
-  background-color: transparent;
-  color: var(--background-color);
-}
+
 
 .body-content #clients-list ul li:nth-of-type(4) {
   color: red;
   margin-top: 10px;
-  border-top: 1px solid var(--background-color);
+  border-top: 1px solid var(--color);
   padding-top: 10px;
 }
 
@@ -327,8 +317,8 @@ nav ul li button:hover {
   padding: 5px;
   width: 60px;
   color: #fff;
-  text-align: center;
   border-radius: 10px;
+  text-align: center;
 }
 
 .role-badge--client {
@@ -352,7 +342,7 @@ nav ul li button:hover {
 
 .body-content #admin-actions form {
   position: relative;
-  background-color: var(--color);
+  border: 1px solid var(--color);
   padding: 10px;
   width: 30%;
   border-radius: 10px;
@@ -360,30 +350,27 @@ nav ul li button:hover {
 
 .body-content #admin-actions form input {
   border: none;
-  color: var(--background-color);
-  border-bottom: 1px solid var(--background-color);
+  color: var(--color);
+  border-bottom: 1px solid var(--color);
   padding: 10px;
   margin-bottom: 10px;
-  background-color: transparent;
   width: 90%;
   outline: none;
 }
 
 .body-content #admin-actions form label {
-  background-color: transparent;
   color: var(--background-color);
 }
 
 .body-content #admin-actions form #cancel-btn {
-  border: 1px solid var(--primary-color);
-  background-color: transparent;
+  border: 1px solid var(--color);
   color: var(--background-color);
   transition: all 0.3s ease-out;
   float: right;
 }
 
 .body-content #admin-actions form #cancel-btn:hover {
-  background-color: var(--primary-color);
+  background-color: var(--background-color);
   color: var(--color);
 }
 
@@ -393,11 +380,6 @@ nav ul li button:hover {
   font-weight: 500;
   padding: 5px;
   transition: 0.3s ease-out;
-}
-
-.body-content h2 #add-btn:hover {
-  background-color: var(--primary-color);
-  color: var(--color);
 }
 
 @media screen and (max-width: 400px) {
@@ -433,7 +415,6 @@ nav ul li button:hover {
 }
 
 .body-content #user-admin-actions form label {
-  background-color: transparent;
   color: var(--background-color);
   display: inline-block;
 }
@@ -442,7 +423,6 @@ nav ul li button:hover {
   border: none;
   border-bottom: 1px solid var(--background-color);
   outline: none;
-  background-color: transparent;
   color: var(--background-color);
   padding-left: 2%;
 }
@@ -450,7 +430,6 @@ nav ul li button:hover {
 .body-content .user-profile #edit-btn,
 .body-content #delete-user-button {
   border: 1px solid var(--primary-color);
-  background-color: transparent;
   margin-top: 10px;
   margin-bottom: 10px;
   padding: 5px;
