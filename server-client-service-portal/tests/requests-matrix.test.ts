@@ -268,6 +268,18 @@ test("assignment: a client cannot assign an engineer (403)", async () => {
   assert.equal(res.status, 403);
 });
 
+test("assignment: a missing request id is a 404", async () => {
+  const token = await tokenFor("admin@portal.local");
+  const res = await fetch(
+    `${baseUrl}/api/requests/00000000-0000-4000-8000-999999999999/assignments`,
+    authed(token, {
+      method: "POST",
+      body: JSON.stringify({ engineer_id: SEED_IDS.engineer }),
+    }),
+  );
+  assert.equal(res.status, 404);
+});
+
 test("assignment: an admin cannot assign a user who isn't an engineer (400)", async () => {
   const token = await tokenFor("admin@portal.local");
   const res = await fetch(

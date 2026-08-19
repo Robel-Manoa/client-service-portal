@@ -56,12 +56,10 @@ jobs:
         working-directory: server-client-service-portal
         run: npm ci
 
-      - name: Initialize database schema
-        working-directory: server-client-service-portal
-        run: npm run db:init
-
       - name: Run backend tests with coverage
         working-directory: server-client-service-portal
+        # test:coverage resets and reseeds the database itself (see
+        # package.json) — no separate db:init step needed here.
         run: npm run test:coverage
 
       - name: Build backend
