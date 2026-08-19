@@ -24,8 +24,17 @@ export const createUserSchema = z.object({
       .string({ message: "Name is required" })
       .min(5, "Name must be at least 5 characters long").openapi({example: "Robel Manoa", description: "The new user's name"}),
     email: z
-      .string({ message: "Email is required" })
-      .email("Invalid email address format").openapi({example: "robelmanoa@gmail.com"}),
+      .email({
+        // See auth.schema.ts for why this is a callback: z.string().email()
+        // is deprecated in Zod v4, and the callback keeps the same two
+        // distinct messages the old chained .string({message}).email(message)
+        // used to give for "missing" vs "malformed".
+        error: (issue) =>
+          issue.code === "invalid_type"
+            ? "Email is required"
+            : "Invalid email address format",
+      })
+      .openapi({ example: "robelmanoa@gmail.com" }),
     password: z
       .string({ message: "Password is required" })
       .min(8, "Password must be at least 8 characters long").openapi({example: "mystrongpassword", description: "The password must be secure and at least 8 characters long"}),
@@ -44,7 +53,7 @@ export const createUserSchema = z.object({
 export const updateUserSchema = z.object({
   body: z.object({
     name: z.string().min(5).optional(),
-    email: z.string().email().optional(),
+    email: z.email().optional(),
     password: z.string().min(8).optional(),
     role: z.enum(["client", "admin", "engineer"]).optional(),
     is_active: z.boolean().optional(),
