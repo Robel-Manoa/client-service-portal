@@ -74,7 +74,6 @@ test("create() creates a request and returns client info via the join", async ()
 
 test("findAll() returns every request", async () => {
   const testClient = await createTestUser("client");
-  const baseline = await RequestService.findAll(undefined, client);
 
   const request1 = await RequestService.create(
     {
@@ -101,9 +100,10 @@ test("findAll() returns every request", async () => {
   const results = await RequestService.findAll(undefined, client);
   const resultIds = results.map((r) => r.id);
 
-  // Baseline (seed data + whatever's already committed) plus these two —
-  // not an exact total, since other tables/files legitimately share this DB now.
-  assert.equal(results.length, baseline.length + 2);
+  // No count assertion here: other test files legitimately share this table
+  // now and commit/delete their own rows concurrently, so any total drawn
+  // from it can drift mid-test. Membership is what this test is actually
+  // about — that findAll() with no filter includes these two.
   assert.ok(resultIds.includes(request1.id));
   assert.ok(resultIds.includes(request2.id));
 });
