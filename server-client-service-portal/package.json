@@ -7,7 +7,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "tsx --test tests/**/*.test.ts",
+    "test": "tsx --test tests/**/*.test.ts tests/core/*.test.ts tests/*.test.ts",
     "test:coverage": "node -e \"require('fs').mkdirSync('coverage',{recursive:true})\" && tsx --test --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info tests/**/*.test.ts",
     "db:init": "tsx src/db/init-db.ts",
     "ci": "npm install"
