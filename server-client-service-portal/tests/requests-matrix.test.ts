@@ -145,7 +145,32 @@ test("status transitions: a client can never change the status (403)", async () 
   assert.equal(res.status, 403);
 });
 
-test("status transitions: an engineer CANNOT go from open -> in_progress (403)", async () => {
+test("status transitions: an engineer cannot change status on a request not assigned to them (403)", async () => {
+  const clientToken = await tokenFor("manoa@gmail.com");
+  const created = await fetch(
+    `${baseUrl}/api/requests`,
+    authed(clientToken, {
+      method: "POST",
+      body: JSON.stringify({
+        title: "Unassigned request for engineer PATCH test",
+        description: "Description long enough for Zod",
+        priority: "low",
+      }),
+    }),
+  ).then((r) => r.json());
+
+  const engineerToken = await tokenFor("robel@gmail.com");
+  const res = await fetch(
+    `${baseUrl}/api/requests/${created.id}`,
+    authed(engineerToken, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "resolved" }),
+    }),
+  );
+  assert.equal(res.status, 403);
+});
+
+test("status transitions: an assigned engineer still CANNOT go from open -> in_progress (403)", async () => {
   const clientToken = await tokenFor("manoa@gmail.com");
   const created = await fetch(
     `${baseUrl}/api/requests`,
@@ -159,6 +184,15 @@ test("status transitions: an engineer CANNOT go from open -> in_progress (403)",
     }),
   ).then((r) => r.json());
 
+  const adminToken = await tokenFor("admin@portal.local");
+  await fetch(
+    `${baseUrl}/api/requests/${created.id}/assignments`,
+    authed(adminToken, {
+      method: "POST",
+      body: JSON.stringify({ engineer_id: SEED_IDS.engineer }),
+    }),
+  );
+
   const engineerToken = await tokenFor("robel@gmail.com");
   const res = await fetch(
     `${baseUrl}/api/requests/${created.id}`,
@@ -170,7 +204,7 @@ test("status transitions: an engineer CANNOT go from open -> in_progress (403)",
   assert.equal(res.status, 403);
 });
 
-test("status transitions: an engineer CAN go from open -> resolved (200)", async () => {
+test("status transitions: the assigned engineer CAN go from open -> resolved (200)", async () => {
   const clientToken = await tokenFor("manoa@gmail.com");
   const created = await fetch(
     `${baseUrl}/api/requests`,
@@ -183,6 +217,15 @@ test("status transitions: an engineer CAN go from open -> resolved (200)", async
       }),
     }),
   ).then((r) => r.json());
+
+  const adminToken = await tokenFor("admin@portal.local");
+  await fetch(
+    `${baseUrl}/api/requests/${created.id}/assignments`,
+    authed(adminToken, {
+      method: "POST",
+      body: JSON.stringify({ engineer_id: SEED_IDS.engineer }),
+    }),
+  );
 
   const engineerToken = await tokenFor("robel@gmail.com");
   const res = await fetch(
@@ -198,7 +241,6 @@ test("status transitions: an engineer CAN go from open -> resolved (200)", async
   assert.equal(body.status, "resolved");
 
   // An admin can then close the request, a transition the engineer doesn't have.
-  const adminToken = await tokenFor("admin@portal.local");
   const closeRes = await fetch(
     `${baseUrl}/api/requests/${created.id}`,
     authed(adminToken, {
@@ -292,6 +334,62 @@ test("comments: staff also see internal comments", async () => {
 
   assert.equal(res.status, 200);
   assert.ok(comments.some((c) => c.visibility === "internal"));
+});
+
+test("comments: the assigned engineer also sees internal comments", async () => {
+  const token = await tokenFor("robel@gmail.com"); // assigned to SEED_IDS.request1
+  const res = await fetch(`${baseUrl}/api/requests/${SEED_IDS.request1}/comments`, authed(token));
+  const comments: Array<{ visibility: string }> = await res.json();
+
+  assert.equal(res.status, 200);
+  assert.ok(comments.some((c) => c.visibility === "internal"));
+});
+
+test("comments: an engineer NOT assigned to the request cannot read comments (403)", async () => {
+  const clientToken = await tokenFor("manoa@gmail.com");
+  const created = await fetch(
+    `${baseUrl}/api/requests`,
+    authed(clientToken, {
+      method: "POST",
+      body: JSON.stringify({
+        title: "Unassigned request for engineer comment-read test",
+        description: "Description long enough for Zod",
+        priority: "low",
+      }),
+    }),
+  ).then((r) => r.json());
+
+  const engineerToken = await tokenFor("robel@gmail.com");
+  const res = await fetch(
+    `${baseUrl}/api/requests/${created.id}/comments`,
+    authed(engineerToken),
+  );
+  assert.equal(res.status, 403);
+});
+
+test("comments: an engineer NOT assigned to the request cannot post a comment (403)", async () => {
+  const clientToken = await tokenFor("manoa@gmail.com");
+  const created = await fetch(
+    `${baseUrl}/api/requests`,
+    authed(clientToken, {
+      method: "POST",
+      body: JSON.stringify({
+        title: "Unassigned request for engineer comment-post test",
+        description: "Description long enough for Zod",
+        priority: "low",
+      }),
+    }),
+  ).then((r) => r.json());
+
+  const engineerToken = await tokenFor("robel@gmail.com");
+  const res = await fetch(
+    `${baseUrl}/api/requests/${created.id}/comments`,
+    authed(engineerToken, {
+      method: "POST",
+      body: JSON.stringify({ body: "Should not be allowed", visibility: "public" }),
+    }),
+  );
+  assert.equal(res.status, 403);
 });
 
 test("comments: a client posting as 'internal' is forced to 'public'", async () => {
