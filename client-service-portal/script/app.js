@@ -95,18 +95,16 @@ if (loginForm) {
     const password = /** @type {HTMLInputElement} */ (
       document.getElementById("password")
     ).value;
-    const errorMessage = document.querySelector(".error-message");
-    if (errorMessage) errorMessage.textContent = "";
 
     try {
       const user = await api.login(email, password);
       window.location.href = ROUTES.home(user.role);
     } catch (err) {
-      if (!errorMessage) return;
-      errorMessage.textContent =
+      alert(
         err instanceof ApiError && err.status === 401
           ? "Invalid email or password. Please try again."
-          : describeError(err);
+          : describeError(err),
+      );
     }
   });
 }
@@ -217,7 +215,7 @@ function removeFormEdit() {
     .getUsers()
     .then(renderUserList)
     .catch((err) => {
-      clientsList.innerHTML = `<p>${describeError(err)}</p>`;
+      alert(describeError(err));
     });
 
   if (!addUserForm) return;
@@ -315,7 +313,7 @@ function removeFormEdit() {
       renderRequestsTable(allRequests);
     })
     .catch((err) => {
-      tableBody.innerHTML = `<tr><td colspan="5">${describeError(err)}</td></tr>`;
+      alert(describeError(err));
     });
 
   filterForm.addEventListener("submit", function (event) {
@@ -496,7 +494,7 @@ function removeFormEdit() {
         commentsList.appendChild(li);
       });
     } catch (err) {
-      commentsList.innerHTML = `<li>${describeError(err)}</li>`;
+      alert(describeError(err));
     }
   };
 

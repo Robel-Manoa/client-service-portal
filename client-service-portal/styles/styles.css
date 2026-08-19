@@ -85,11 +85,6 @@
   border: 1px solid var(--primary-color);
 }
 
-.login-content #loginForm .error-message {
-  color: var(--primary-color);
-  margin-top: 20px;
-}
-
 /* Login part : End */
 
 /* Navigation Barre : Start */
