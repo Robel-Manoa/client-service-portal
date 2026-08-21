@@ -1,221 +1,210 @@
-# Client service portal
+# Client Service Portal — Frontend
 
-## Metadata
+A framework-free web client for the Client Service Portal: clients submit
+and track service requests, engineers manage the ones assigned to them, and
+administrators oversee everything and manage user accounts.
 
-- Author: ROBEL Fy Manoa Andrianavalona
-- Status: Connected to a real backend (`server-client-service-portal`); frontend remains no framework, plain HTML, CSS, and JavaScript, zero external dependencies
-- Created: 07/07/2026 (start of the development part)
-- URL: Robel-Manoa/client-service-portal
+This is the frontend half of a two-part repository. The backend
+(`server-client-service-portal/`) is a separate Express and TypeScript API
+that this frontend consumes over HTTP — see that project's own README for
+backend-specific instructions. This project has no build step and no
+package manager of its own; it runs directly in the browser.
 
-## objective
+## Prerequisites
 
-Build a web application to improve and manage the customer request process
+- A modern web browser.
+- The backend API running and reachable (see "Running against the backend"
+  below). Nothing in this frontend works without it — there is no offline
+  or mock mode.
 
-## Background
+## Getting started
 
-Your company, a systems integration and software development agency, manages ongoing service relationships with multiple clients. Currently, service requests are handled informally — through emails and spreadsheets. The Client Service Portal (CSP) is a web application that brings this process into a structured, role-based system. Clients use the portal to submit and track service requests. Engineers manage their assigned requests and update statuses. Admins oversee all requests, manage assignments, and administer user accounts.
+1. Make sure the backend is running first (from `server-client-service-portal/`,
+   see that project's README — in short: `npm ci`, configure `.env`,
+   `npm run db:init`, `npm run dev`). By default it listens on
+   `http://localhost:3001`.
+2. Open `index.html` directly in a browser. There is nothing to install,
+   build, or serve — double-clicking the file is enough.
+3. Log in with one of the seeded demo accounts (password `password123` for
+   all of them):
 
-## Goals
+   | Role     | Email                |
+   | -------- | --------------------- |
+   | Admin    | admin@portal.local     |
+   | Client   | manoa@gmail.com        |
+   | Engineer | robel@gmail.com        |
+   | Client   | Fy@gmail.com            |
 
-- Submit a request as a customer
-- Track the project's status and progress
-- Manage customer requests
-- Assign a manager (engineer) to a request (as an admin)
-- Update a client's project status
-- Leave a comment on each project
-- Manage user accounts (as an admin)
-- View your own requests and comments left
-- Add internal comments (not visible to clients)
-- A responsive application
+That is the entire setup. There is no `npm install`, no dev server, and no
+compilation step for this part of the repository.
 
-## Non-goals
+### Running against the backend
 
-- Password hashing on the frontend (the backend hashes/verifies passwords; the frontend never sees or stores one after login)
-- Using a frontend framework or build tool
+The frontend talks to the API at a fixed base URL, `API_BASE_URL` in
+`script/api.js`:
 
-## User roles
+```js
+const API_BASE_URL = "http://localhost:3001/api";
+```
 
-| Role     | Who they are                       | What they can do                                                                              |
-| -------- | ----------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Client   | An external company representative | Submit requests, view their own requests, add comment                                        |
-| Engineer | An internal company engineer       | View, assigned requests, update request status, add comments (internal or visible to client) |
-| Admin    | An internal administrator          | Manage all requests, assign engineers to requests, manage user accounts                      |
+If the backend runs on a different host or port, update that one constant —
+it is the only place the API location is configured.
 
-## How to run the application
-
-This is two separate projects that need to run at the same time:
-
-1. Start the backend API (`server-client-service-portal/`): from that
-   folder, `npm ci` then `npm run dev` (needs a `.env` — see that project's
-   own README/setup). It listens on `http://localhost:3001` by default.
-2. Open the frontend (`client-service-portal/`): double-click `index.html`
-   (no server, no build step required). It talks to the backend at
-   `http://localhost:3001/api` — see `script/api.js`'s `API_BASE_URL` if
-   the backend is running somewhere else.
-
-## User Account Demo
-
-Seeded by the backend (`server-client-service-portal/src/core/database.ts`),
-password `password123` for all four:
-
-| Role     | Email                |
-| -------- | --------------------- |
-| Admin    | admin@portal.local    |
-| Client   | manoa@gmail.com       |
-| Engineer | robel@gmail.com       |
-| Client   | Fy@gmail.com          |
-
-## User interface
-
-### Login page
-
-The login page shows a login form where users (all types of users) need to enter their email address and password correctly to log into the app. The page also has a small brief describing the app, how it works, and why it’s there. The login page handles redirecting users according to their roles (client, engineer, admin).
-
-### User Homepages & Dashboards
-
-- Client Dashboard: Displays a personalized view of all requests submitted by the client.
-  Visible Fields: Request Name, Priority, Status, Creation Date, and Details link.
-  Action: Users can click on any request to view its full details.
-- Engineer Dashboard: Displays all requests assigned to the engineer by the administrator.
-  Layout: Inherits the same layout as the client dashboard.
-  Action: Engineers can view the full details of any assigned request.
-- Admin Dashboard: Displays all requests submitted by all clients across the platform, using the same view and layout as the other roles.
-
-### Global Features
-
-- Data Filtering: All user dashboards include a filtering option to sort requests by status (open, in progress, pending client, resolved, closed).
-
-### Request details page
-
-The request details page clearly displays all information related to the client's request. It includes the request title, description, priority, status, creation date, and the assigned engineer (shown by id — see "Known limitations" below). It also features a history of all status changes for the project, as well as comments left by clients, administrators, and engineers (shown by author id, same reason). This comment section can also function as a chat/discussion thread. Admins additionally get a "Delete request" action here.
-
-### Add new request page
-
-To submit a new request, the client must complete a form with the following fields: title, project priority, and project description. Once all fields are filled out, the client can submit the request. It will then appear in the administration dashboard's request list as an "Open" request, as well as on the dashboard of the client who submitted it
-
-## Known limitations
-
-- **Assigned engineer / comment author shown by id, not name.** Resolving a
-  name requires `GET /api/users/:id`, which the backend only allows for
-  `admin`/`engineer` — a `client` gets a 403. Rather than show a name to
-  some viewers and silently fail for others, the id is shown to everyone.
-- **A user's request list on their profile page (`detail-users.html`) only
-  renders for an admin viewer.** The backend has no "get this specific
-  user's requests" endpoint; `GET /api/requests` is scoped to the caller's
-  own role, so only an admin (who sees every request) can filter it down to
-  an arbitrary user.
-- **Status transitions are enforced by the backend, not just the UI**:
-  clients can never change status; engineers may only move an `open`
-  request straight to `resolved`; admins may set any status. The UI only
-  offers the buttons the backend will actually accept.
-
-## Missing features
-
-- Add regex
-- Filter request list by date
-- Searched request
-
-## Architecture
-
-### Frontend language: Vanilla HTML5 / JavaScript / CSS
-
-The application is built entirely on a native web stack with zero external dependencies, ensuring a lightweight and highly compatible architecture.
-
-- Core Technologies: Native HTML5, CSS3, and Vanilla JavaScript.
-- No Frameworks / Libraries: Developed completely without external frameworks (such as React, Vue, or Angular) or third-party libraries (such as jQuery or Tailwind).
-- No Build Tools: The project does not require any compilation, transpilation, or bundling tools (no Webpack, Vite, or Babel).
-- Direct Execution: The code runs natively and directly in the browser, with no debugging tools or development servers required for building the application
-
-### Backend: `server-client-service-portal/` (Express + TypeScript)
-
-A real HTTP API the frontend talks to over `fetch` — JWT bearer auth,
-role-based access control, PostgreSQL-backed data store. See that project's own
-docs/source for details; the frontend treats it as the single source of
-truth for data, ids, and validation rules and never fakes any of it
-locally.
-
-### Session: `sessionStorage`
-
-The frontend keeps only the logged-in session (the JWT and the current
-user) in `sessionStorage` (`csp_session`, set by `script/api.js`) — nothing
-else is cached client-side. Closing the tab ends the session, same as
-before.
-
-### Type checking (jsconfig.json)
-
-Even without a build step, every `.js` file starts with `// @ts-check` and is checked by the TypeScript language service in strict mode via `jsconfig.json` (`allowJs` + `checkJs` + `strict: true`) — this is an editor/IDE-time check only, nothing is compiled or bundled. Shared data shapes (`User`, `ServiceRequest`, `RequestComment`, ...) are declared once as JSDoc `@typedef`s in `script/api.js`; because these files are plain global scripts (no `import`/`export`), those typedefs are automatically visible to `script/app.js` as well.
-
-## File structure
+## Project structure
 
 ```
 client-service-portal/
+├── index.html            Login page (site entry point)
+├── jsconfig.json         Editor-level type checking for the plain JS files
 ├── pages/
-│   ├── add-request.html
-│   ├── client-list.html
-│   ├── detail-users.html
-│   ├── index-admin.html
-│   ├── index-client.html
-│   ├── index-engineer.html
-│   └── request-detail.html
+│   ├── add-request.html    New request form (client)
+│   ├── client-list.html    All users (admin)
+│   ├── detail-users.html   Single user profile
+│   ├── index-admin.html    Admin dashboard — all requests
+│   ├── index-client.html   Client dashboard — own requests
+│   ├── index-engineer.html Engineer dashboard — assigned requests
+│   └── request-detail.html Single request — status, assignment, comments
 ├── script/
-│   ├── api.js
-│   └── app.js
-├── styles/
-│   └── styles.css
-├── index.html
-├── jsconfig.json
-└── README.md
+│   ├── api.js             All communication with the backend
+│   ├── routes.js          Page URL construction
+│   └── app.js              Page-specific rendering and event handling
+└── styles/
+    └── styles.css          The one stylesheet, shared by every page
 ```
 
-## Main functions implemented
+Every page loads the same three scripts, in this order, each deferred:
+`api.js`, then `routes.js`, then `app.js`. They are plain global scripts,
+not ES modules — there is no bundler, so load order matters and each script
+relies on the previous one already having run.
 
-### api.js — the data layer
+## How the pages fit together
 
-The data layer is the single point of contact with the backend. Every page
-(`app.js`) reads and writes through it instead of calling `fetch` directly.
-It's a plain object assigned to the `api` constant, backed by one internal
-`request(method, path, options)` helper that attaches the bearer token,
-parses the JSON response, and throws an `ApiError` (with `.status` and,
-for 400s, field-level `.details`) on any non-2xx response.
+| Page | Who sees it | Purpose |
+| ---- | ------------ | ------- |
+| `index.html` | Everyone (logged out) | Login form; redirects to the correct dashboard on success. |
+| `pages/index-client.html` | Client | Table of the client's own requests, filterable by status. |
+| `pages/index-engineer.html` | Engineer | Table of requests assigned to the engineer. |
+| `pages/index-admin.html` | Admin | Table of every request on the platform. |
+| `pages/add-request.html` | Client | Form to submit a new request (title, priority, description). |
+| `pages/request-detail.html` | Any authenticated role | Full detail of one request: fields, status history, status-transition actions, assignment (admin), comment thread. |
+| `pages/client-list.html` | Admin | List of every user, with a form to create new ones. |
+| `pages/detail-users.html` | Admin, engineer | A single user's profile; admins additionally get an edit form and, when viewing a client or engineer, that user's request list. |
 
-**Session**
+## Session handling
 
-- `login(email, password)`: `POST /api/auth/login`; on success persists
-  `{token, user}` to `sessionStorage` and returns the user.
-- `logout()`: clears the session, local-only (the API is stateless, there's
-  no server-side logout).
-- `getCurrentUser()`: synchronous — reads the session and returns the user,
-  or `null`.
+The frontend keeps only the logged-in session — the JWT and the current
+user object — in `sessionStorage`, under the key `csp_session`, written and
+read by `script/api.js`. Nothing else is cached client-side, and nothing is
+persisted across a closed tab; logging in again is required for a new tab
+or browser session. On any `401` response from the API, the session is
+cleared automatically and the user is redirected to the login page.
 
-**Users** (`getUsers`, `getUserById`, `getEngineers`, `createUser`,
-`updateUser`, `deleteUser`): thin wrappers over `/api/users*`. `getUsers`
-(the list) is admin-only server-side; `getUserById` (a single user) is
-allowed for both `admin` and `engineer`.
+## Access control
 
-**Requests** (`getRequests`, `getRequestById`, `createRequest`,
-`updateRequestStatus`, `deleteRequest`, `assignEngineer`): thin wrappers
-over `/api/requests*`. `getRequests` is scoped server-side by the caller's
-role — one call covers every dashboard, no client-side role branching
-needed. `assignEngineer` posts to `/api/requests/:id/assignments`, which
-just sets `assigned_engineer_id` on the request and returns it — there is
-no separate "assignment" resource.
+Role checks in the frontend exist to give users a coherent interface — they
+are not a security boundary. The backend enforces every permission
+independently and will reject a request regardless of what the frontend
+does or does not show. Two mechanisms are used:
 
-**Comments** (`getCommentsForRequest`, `addComment`): thin wrappers over
-`/api/requests/:id/comments`. Internal-comment filtering by role happens
-server-side; the frontend never asks for or receives comments it shouldn't.
+- **Page guards**: every protected page calls `requireAuth(requiredRole)`
+  (defined in `script/app.js`) before rendering anything. It reads the
+  current session, redirects to the login page if there is none, and also
+  redirects if the logged-in user's role is not in `requiredRole` (a single
+  role or a list of allowed roles).
+- **Element-level gating**: on `request-detail.html`, the internal-comment
+  option, the delete-request action, and the engineer-assignment section
+  are only shown to the roles allowed to use them. The set of status
+  buttons offered is computed to match the backend's exact transition rules
+  per role — a client is never offered a status change, an engineer is only
+  ever offered `open -> resolved`, and an admin is offered every status.
 
-### app.js — page orchestration functions
+## Known limitations
 
-`app.js` runs on every page. Each block checks for the presence of a specific DOM element (e.g. `document.getElementById("request-info")`) before running, which lets a single script safely drive several different pages without errors on elements that don't exist there.
+These are current, intentional gaps rather than defects, and are worth
+knowing before extending the application:
 
-- `requireAuth(requiredRole)`: The access-control gatekeeper. Redirects to the login page if no user is logged in, or if the logged-in user's role isn't part of `requiredRole` (a single role or an array of allowed roles). Called at the top of every protected block, and returns the current user so the rest of the block can use it.
-- `describeError(err)`: Turns a failed `api.js` call into a message worth showing — joins field-level validation errors (400s) into one string, otherwise falls back to the backend's own error message.
-- `cloneTemplate(template, fields)`: Clones a `<template>` element's content and fills its `[data-field]` slots via `textContent`. Used by every function below that renders a list of records, so user-entered data (names, titles, comments, ...) never passes through `innerHTML` string interpolation.
-- `userList(users)`: Renders the user list on the admin client list page (via the `#user-row-template` `<template>`), including the role badge (`.role-badge--client/--engineer/--admin` CSS classes).
-- `renderTable(requests)`: Renders the requests table body (`#requests-table-body`) shared by the client, engineer, and admin dashboards (via the `#request-row-template` `<template>`), and is re-run whenever the status filter (`filterForm`) changes.
-- `renderRequest()` / `renderComments()`: Render the request-detail page — request fields, status history, the available status-transition buttons (matching the backend's exact per-role transition rules), and the comment thread. Re-invoked after every status change, assignment, or new comment so the page stays in sync without a reload. The status buttons share a single delegated click listener on `#status-controls` instead of one listener per button.
-- `renderUser()` / `renderUserRequests(user)`: Render the user-detail page (via the `#user-request-row-template` `<template>`) — profile fields, and (admin viewers only, see "Known limitations") the list of requests tied to them.
+- **The assigned engineer and comment authors are shown by id, not by
+  name.** Resolving an id to a name requires `GET /api/users/:id`, which
+  the backend restricts to `admin` and `engineer` — a `client` viewing the
+  same page would get a `403`. Rather than show a name to some viewers and
+  fail silently for others, the id is shown to everyone.
+- **A user's request list on their profile page only renders for an admin
+  viewer.** The backend has no endpoint to fetch an arbitrary user's
+  requests; `GET /api/requests` is always scoped to the caller's own role,
+  so only an admin (who already sees every request) can filter that list
+  down to one user.
+- **Status transitions are enforced by the backend, not just the UI.** The
+  frontend only ever offers buttons the backend will accept; it does not
+  independently invent or loosen the transition rules.
 
-Together, `requireAuth` and the `render*` functions form the recurring pattern used across the app: **authenticate → fetch through `api` → render → re-render on user action**.
+### Not yet implemented
 
-**Note on form fields named `name`/`role`/`title`**: on `add-user-form` and `edit-user-form`, the "name" and "role" fields are read via `document.getElementById(...)`, not `form.name`/`form.role`. `HTMLFormElement` already has its own `name` IDL attribute (the form's own `name` HTML attribute), and every `Element` already has a `role` IDL attribute (ARIA reflection) — both silently shadow a same-named child form control when accessed via dot notation. Same reasoning on `add-request-form`, where the title field is read via `document.getElementById("title")` instead of `form.title` (`HTMLElement.title` is the tooltip-text attribute). Any new form field named `name`, `role`, `title`, `id`, `class`, `style`, `action`, `method`, `target`, or `length` needs the same treatment — read by id instead of by dot access.
+- Validation via regular expressions on form fields beyond basic length
+  checks.
+- Filtering the request list by date.
+- Searching requests by keyword.
+
+## Working with `script/api.js`
+
+This is the only file that talks to the backend; every page goes through
+it instead of calling `fetch` directly. It exposes a single `api` object,
+backed by an internal request helper that attaches the bearer token, parses
+JSON responses, and throws an `ApiError` (carrying `.status` and, for
+validation failures, field-level `.details`) on any non-2xx response.
+
+Relevant methods:
+
+- Session: `login`, `logout`, `getCurrentUser`.
+- Users: `getUsers`, `getUserById`, `getEngineers`, `createUser`,
+  `updateUser`, `deleteUser`.
+- Requests: `getRequests`, `getRequestById`, `createRequest`,
+  `updateRequestStatus`, `deleteRequest`, `assignEngineer`.
+- Comments: `getCommentsForRequest`, `addComment`.
+
+`script/routes.js` is the single source of truth for page URLs
+(`ROUTES.login`, `ROUTES.home(role)`, `ROUTES.requestDetail(id)`, and so
+on) — new links or redirects should go through it rather than hardcoding a
+path, since it already accounts for the difference between the root
+`index.html` and pages nested under `pages/`.
+
+`script/app.js` is where each page's own logic lives. Every block checks
+for a page-specific DOM element before running, which is what lets one
+script safely serve every page — a block simply does nothing on pages
+where its element is absent. It also defines `requireAuth` (see "Access
+control" above), `cloneTemplate` (renders `<template>` elements by filling
+`[data-field]` slots with `textContent`, deliberately avoiding `innerHTML`
+for any user-supplied data), and `describeError` (turns a failed API call
+into a message worth displaying).
+
+### A note on form field names
+
+On any form, a field named `name`, `role`, `title`, `id`, `class`, `style`,
+`action`, `method`, `target`, or `length` must be read with
+`document.getElementById(...)`, not `form.name` / `form.role` / etc. Native
+DOM elements already expose properties with these exact names —
+`HTMLFormElement.name`, the ARIA `role` reflection on every `Element`,
+`HTMLElement.title` as tooltip text, and so on — and those built-in
+properties silently shadow a same-named child form control when accessed
+by dot notation, without raising any error. This has already caused bugs in
+this codebase; any new form field using one of these names needs the same
+treatment.
+
+## Type checking
+
+There is no build step, but every `.js` file starts with `// @ts-check` and
+is checked in strict mode by the TypeScript language service via
+`jsconfig.json`. This is an editor/IDE-time check only — nothing is
+compiled or bundled. Shared data shapes (`User`, `ServiceRequest`,
+`RequestComment`, and the role/status/priority unions) are declared once as
+JSDoc `@typedef`s in `script/api.js`; because these are plain global
+scripts rather than ES modules, those typedefs are automatically visible in
+`script/app.js` and `script/routes.js` as well.
+
+## Styling
+
+A single stylesheet, `styles/styles.css`, is shared by every page — there
+are no per-page or component-scoped styles. It uses CSS custom properties
+for the core color palette and per-role badge colors, and is responsive via
+a small number of media queries plus a flexbox layout on the request-detail
+page that stacks its columns on narrow viewports without needing an
+additional breakpoint.
