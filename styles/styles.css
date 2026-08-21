@@ -1,0 +1,483 @@
+* {
+  margin: 0;
+  padding: 0;
+  font-size: 1rem;
+  font-family: "Times New Roman", Times, serif;
+  text-decoration: none;
+  list-style-type: none;
+  background-color: var(--background-color);
+  color: var(--color);
+  /* Without this, any element that combines width:100% with its own
+     padding (form inputs/textareas throughout this file) renders wider
+     than its container — a common cause of horizontal overflow. */
+  box-sizing: border-box;
+}
+
+:root {
+  --color: #fff;
+  --background-color: #000000;
+  --primary-color: #ff3535;
+  --role-client-color: green;
+  --role-engineer-color: blue;
+  --role-admin-color: red;
+}
+
+html {
+  /* Belt-and-braces: every overflow source below is fixed directly, but
+     this stops any single missed one from producing page-wide horizontal
+     scroll instead of just clipping that one element. */
+  overflow-x: hidden;
+}
+
+/* Visually hides an element while keeping it readable to screen readers — used for form labels kept out of the visual design */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Login part : Start */
+
+.login-content {
+  position: relative;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 10%;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+.login-content .app-desc {
+  width: 40%;
+  min-width: 260px;
+  line-height: 1.5rem;
+}
+
+.login-content .app-desc h2 {
+  font-size: 2.5rem;
+  margin-bottom: 50px;
+  color: var(--primary-color);
+}
+
+.login-content #loginForm {
+  background-color: var(--color);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  width: 100%;
+  max-width: 350px;
+  /* No fixed height: the form's own content sizes it, so it never clips
+     or overflows regardless of viewport. */
+  border-radius: 10px;
+  box-shadow: 0px 0px 15px var(--primary-color);
+}
+
+.login-content #loginForm input {
+  border: none;
+  outline: none;
+  border-bottom: 1px solid var(--background-color);
+  margin-bottom: 20px;
+  padding: 20px;
+}
+
+.login-content #loginForm button {
+  width: 150px;
+  padding: 5px;
+  border: none;
+  transition: all 0.3s ease-in-out;
+}
+
+.login-content #loginForm button:hover {
+  cursor: pointer;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+}
+
+/* Login part : End */
+
+/* Navigation Barre : Start */
+
+nav {
+  background-color: var(--color);
+  padding: 10px 20px;
+  width: 90%;
+  max-width: 500px;
+  margin: 15px auto 5%;
+  border-radius: 50px;
+}
+
+nav ul {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--color);
+  border-radius: 50px;
+}
+
+nav ul li,
+nav ul li a {
+  padding: 5px;
+  color: var(--background-color);
+  transition: all 0.3s ease-in-out;
+  background-color: var(--color);
+  border-radius: 5px;
+  
+}
+
+nav ul li button {
+
+  border: none;
+  color: var(--color);
+  transition: all 0.3s ease-in-out;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+nav ul li button:hover {
+  cursor: pointer;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+}
+
+/* Navigation Barre : End */
+
+/* Body content : start */
+
+.body-content {
+  position: relative;
+  margin-left: 10%;
+  margin-right: 10%;
+  /* Defensive: a long unbroken string (a pasted URL in a comment, an
+     unusually long email) shouldn't be able to force horizontal scroll. */
+  overflow-wrap: anywhere;
+}
+
+/* Body content : End  */
+
+/* Index client : Start  */
+
+.body-content h2 {
+  font-size: 2rem;
+  color: var(--primary-color);
+  margin-bottom: 20px;
+}
+
+.body-content form label {
+  margin-bottom: 10px;
+  display: block;
+}
+
+.body-content form button {
+  background-color: var(--primary-color);
+  color: var(--color);
+  border: none;
+  padding: 5px;
+  border-radius: 5px;
+  transition: all 0.3s ease-in-out;
+}
+
+.body-content form button:hover {
+  cursor: pointer;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+}
+
+.body-content form select {
+  padding: 5px;
+  border-radius: 5px;
+  border: none;
+  outline: none;
+  background-color: var(--color);
+  color: var(--background-color);
+}
+
+.body-content .table-wrapper {
+  position: relative;
+  margin-top: 20px;
+  overflow-x: auto;
+  background-color: var(--color);
+}
+
+.body-content .table-wrapper table {
+  width: 100%;
+}
+
+.body-content .table-wrapper table tr th {
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.body-content .table-wrapper table tr td {
+  padding: 10px;
+  text-align: center;
+}
+
+.body-content .table-wrapper table tr td:nth-of-type(1) {
+  text-align: left;
+  font-size: 1.1rem;
+  font-weight: 400;
+  text-transform: capitalize;
+}
+
+/* Index client : End  */
+
+/* Request detail pages : Start */
+
+.body-content .dynamique-content {
+  position: relative;
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 25px;
+}
+
+.body-content .dynamique-content > div {
+  /* flex-basis of 280px: two/three columns on a wide viewport, one full
+     column per row once the viewport can't fit that basis anymore (this
+     is what actually stacks the sections on mobile, not a media query).
+     min-width: 0 stops long unbroken content (see overflow-wrap above)
+     from forcing the column wider than its share. */
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.body-content .dynamique-content #assignment-section h3,
+.body-content .dynamique-content #status-section h3,
+.body-content .dynamique-content #comment-section h3 {
+  color: var(--primary-color);
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  margin-top: 20px;
+}
+
+.body-content .dynamique-content #status-section #status-controls button {
+  background-color: var(--primary-color);
+  color: var(--color);
+  border: none;
+  padding: 5px;
+  border-radius: 5px;
+  transition: all 0.3s ease-in-out;
+  margin-top: 20px;
+  margin-right: 10px;
+}
+
+.body-content .dynamique-content #status-section #status-controls button:hover {
+  cursor: pointer;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+}
+
+.body-content .dynamique-content #comment-section #comments-list li {
+  margin-bottom: 10px;
+  list-style-type: square;
+}
+
+.body-content .dynamique-content #comment-section form textarea,
+.body-content #add-request-form textarea,
+.body-content #add-request-form input {
+  width: 100%;
+  background-color: var(--color);
+  color: var(--background-color);
+  padding: 10px;
+  margin-bottom: 5px;
+  outline: none;
+}
+
+/* Request detail pages : End  */
+
+/* Add request page : Start  */
+
+.body-content #add-request-form {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+/* Add request page : End  */
+
+/* client list page : Start  */
+
+.body-content #clients-list ul {
+  padding: 10px;
+  margin-bottom: 20px;
+  margin-right: 10px;
+  width: 200px;
+  display: inline-block;
+}
+
+
+
+.body-content #clients-list ul li:nth-of-type(4) {
+  color: red;
+  margin-top: 10px;
+  border-top: 1px solid var(--color);
+  padding-top: 10px;
+}
+
+.body-content #clients-list ul li a {
+  color: var(--primary-color);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Role badge — BEM block/element/modifier (see script/app.js userList()) */
+.role-badge {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 5px;
+  width: 60px;
+  color: #fff;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.role-badge--client {
+  background-color: var(--role-client-color);
+}
+
+.role-badge--engineer {
+  background-color: var(--role-engineer-color);
+}
+
+.role-badge--admin {
+  background-color: var(--role-admin-color);
+}
+
+.body-content #admin-actions {
+  display: none;
+  position: absolute;
+  width: 100%;
+  top: 3%;
+}
+
+.body-content #admin-actions form {
+  position: relative;
+  border: 1px solid var(--color);
+  padding: 10px;
+  width: 30%;
+  border-radius: 10px;
+}
+
+.body-content #admin-actions form input {
+  border: none;
+  color: var(--color);
+  border-bottom: 1px solid var(--color);
+  padding: 10px;
+  margin-bottom: 10px;
+  width: 90%;
+  outline: none;
+}
+
+.body-content #admin-actions form label {
+  color: var(--background-color);
+}
+
+.body-content #admin-actions form #cancel-btn {
+  border: 1px solid var(--color);
+  color: var(--background-color);
+  transition: all 0.3s ease-out;
+  float: right;
+}
+
+.body-content #admin-actions form #cancel-btn:hover {
+  background-color: var(--background-color);
+  color: var(--color);
+}
+
+.body-content h2 #add-btn {
+  cursor: pointer;
+  border: 1px solid var(--primary-color);
+  font-weight: 500;
+  padding: 5px;
+  transition: 0.3s ease-out;
+}
+
+@media screen and (max-width: 480px) {
+  .body-content #admin-actions {
+    top: 0%;
+    width: 100%;
+    height: 100vh;
+  }
+
+  .body-content #admin-actions form {
+    width: 100%;
+  }
+
+  .body-content #clients-list ul {
+    width: 100%;
+    font-size: 18pt;
+  }
+}
+
+/* client list page : End  */
+
+/* Small-viewport layout: narrower margins so content has room to
+   breathe, and a smaller heading so it doesn't dominate a 375px screen. */
+@media screen and (max-width: 480px) {
+  .body-content {
+    margin-left: 5%;
+    margin-right: 5%;
+  }
+
+  .body-content h2 {
+    font-size: 1.5rem;
+  }
+}
+
+/* Detail user page :start */
+
+.body-content #user-admin-actions {
+  display: none;
+}
+
+.body-content #user-admin-actions form {
+  background-color: var(--color);
+  padding: 10px;
+  border-radius: 10px;
+  color: var(--background-color);
+}
+
+.body-content #user-admin-actions form label {
+  color: var(--background-color);
+  display: inline-block;
+}
+
+.body-content #user-admin-actions form input {
+  border: none;
+  border-bottom: 1px solid var(--background-color);
+  outline: none;
+  color: var(--background-color);
+  padding-left: 2%;
+}
+
+.body-content .user-profile #edit-btn,
+.body-content #delete-user-button {
+  border: 1px solid var(--primary-color);
+  margin-top: 10px;
+  margin-bottom: 10px;
+  padding: 5px;
+  transition: all 0.3s ease-out;
+}
+
+.body-content .user-profile #edit-btn:hover,
+.body-content #delete-user-button:hover {
+  background-color: var(--primary-color);
+  cursor: pointer;
+}
+
+/* Detail user page : end */
