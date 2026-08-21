@@ -1,7 +1,6 @@
-// Demo/test fixture data — the Postgres equivalent of the old in-memory
-// arrays in core/database.ts. Same fixed SEED_IDS, same content, so the
-// HTTP-level tests (tests/auth.test.ts, tests/requests-*.test.ts, etc.)
-// that log in as these demo accounts keep working unchanged.
+// Demo/test fixture data, keyed on the fixed SEED_IDS so the HTTP-level
+// tests (tests/auth.test.ts, tests/requests-*.test.ts, etc.) that log in
+// as these demo accounts keep working unchanged.
 import { dbPool } from "./postgres";
 import { env } from "../config/env.config";
 import { SEED_IDS } from "../core/database";
@@ -20,7 +19,7 @@ export async function seedDatabase() {
 
   await dbPool.query(
     `INSERT INTO requests (id, client_id, title, description, priority, status, created_at, updated_at)
-     VALUES ($1, $2, 'My Request test', 'This is a request at a memory storage', 'high', 'open', '2023-01-01', '2023-01-01')
+     VALUES ($1, $2, 'My Request test', 'This is a sample seeded request.', 'high', 'open', '2023-01-01', '2023-01-01')
      ON CONFLICT (id) DO NOTHING`,
     [SEED_IDS.request1, SEED_IDS.client1],
   );

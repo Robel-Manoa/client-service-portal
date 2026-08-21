@@ -8,8 +8,8 @@ export interface UserRepository {
   findById(id: string): Promise<User | undefined>;
   findByEmail(email: string): Promise<User | undefined>;
   insert(user: User): Promise<void>;
-  // Don't mutate the object findById returned and assume it sticks — that
-  // only works for the in-memory adapter. Call save() to persist changes.
+  // Don't mutate the object findById returned and assume it sticks — call
+  // save() to persist changes.
   save(user: User): Promise<void>;
   deleteById(id: string): Promise<boolean>;
 }
